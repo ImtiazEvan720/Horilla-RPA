@@ -46,11 +46,12 @@ SIDEBARS = [
     "employee",
     # "attendance",
     # "leave",
-    "payroll",
+    # "payroll",
     "pms",
-    "offboarding",
+    # "offboarding",
     "asset",
     # "helpdesk",
+    "operations"
 ]
 
 WHITE_LABELLING = False
