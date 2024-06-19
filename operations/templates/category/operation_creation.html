@@ -21,10 +21,6 @@
     class="oh-modal__close"
     data-dismiss="oh-modal"
     aria-label="Close"
-    {% if messages %}
-        hx-get="{%url 'asset-category-view-search-filter' %}"
-        hx-target="#assetCategoryList"
-    {% endif %}
     >
     <ion-icon name="close-outline"></ion-icon>
     </button>
@@ -35,7 +31,7 @@
 <div class="oh-modal__dialog-body">
     <form hx-post="{%url 'operation-creation' %}" hx-target="#objectCreateModalTarget">
         {% csrf_token %}
-        <!-- <div class="oh-profile-section pt-0">
+        <div class="oh-profile-section pt-0">
             <div class="oh-input__group ">
                 <label class="oh-input__label" for="{{operation_form.name.id_for_label}}">{% trans "Name" %}</label>
                 {{operation_form.name}}
@@ -51,11 +47,16 @@
                 {{operation_form.frequency}}
                 {{operation_form.frequency.errors}}
             </div>
+            <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operation_form.related_asset.id_for_label}}">{% trans "Related Asset" %}</label>
+                {{operation_form.related_asset}}
+                {{operation_form.related_asset.errors}}
+            </div>
             <div class="oh-modal__dialog-footer p-0 mt-3">
                 <button type="submit" class="oh-btn oh-btn--secondary oh-btn--shadow" >
                     {% trans "Save" %}
                 </button>
             </div>
-        </div> -->
+        </div>
     </form>
 </div>

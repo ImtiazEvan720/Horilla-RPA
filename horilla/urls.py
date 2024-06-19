@@ -36,6 +36,7 @@ urlpatterns = [
     path("onboarding/", include("onboarding.urls")),
     path("pms/", include("pms.urls")),
     path("asset/", include("asset.urls")),
+    path("operations/", include("operations.urls")),
     path("attendance/", include("attendance.urls")),
     path("payroll/", include("payroll.urls.urls")),
     path("helpdesk/", include("helpdesk.urls")),

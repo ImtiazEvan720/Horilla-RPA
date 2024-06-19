@@ -1,0 +1,117 @@
+{% load static i18n %}
+{% if operation_form.instance.id %}
+<!-- start of messages -->
+{% if messages %}
+<div class="oh-wrapper">
+  {% for message in messages %}
+  <div class="oh-alert-container">
+    <div class="oh-alert oh-alert--animated {{message.tags}}">
+      {{ message }}
+    </div>
+  </div>
+  {% endfor %}
+  <script>
+      setTimeout(function () {
+        $('.oh-modal__close').click()
+      }, 1000);
+  </script>
+</div>
+{% endif %}
+
+{% if operation_form.errors %}
+<div class="oh-wrapper">
+    {% for error in operation_form.non_field_errors %}
+    <div class="oh-alert-container">
+        <div class="oh-alert oh-alert--animated oh-alert--danger">
+        {{ error }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+<!-- end of messages -->
+<div id="successMessage" style="display:none" class="oh-alert oh-alert--animated oh-alert--success">
+  {% trans "Report added successfully." %}
+</div>
+
+  <div class="oh-modal__dialog-header">
+    <button  type="button" class="oh-modal__close--custom" data-dismiss="oh-modal" aria-label="Close"
+      onclick="$(this).parents().closest('.oh-modal--show').toggleClass('oh-modal--show')"
+      >
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  <span class="oh-modal__dialog-title " id="addEmployeeObjectiveModalLabel"> {% trans "Operation Update" %}</span>
+</div>
+<div class="oh-modal__dialog-body">
+  <form hx-post="{%url 'operation-update' operation_id=operation_form.instance.id %}?requests_ids={{requests_ids}}&{{pg}}" hx-target="#objectUpdateModalTarget">
+    <!-- {% if asset_under == 'asset_filter' %}
+    <input type="hidden" name="asset_under" value="asset_filter">
+    {%endif %} -->
+    {% csrf_token %}
+    <div class="oh-profile-section pt-0">
+      <section>
+        <div id="ObjecitveContainer">
+          <div class="my-3" id="keyResultCard">
+            <div class=" " id="assetUpdateFormContainer">
+              <div class="row">
+                <div class="col-12 col-sm-12 col-md-6 col-lg-6">
+                  <div class="oh-input__group">
+                    <label class="oh-input__label" for="{{operation_form.name.id_for_label}}" >{% trans "Operation Name" %}</label>
+                    {{operation_form.name}}
+                    {{operation_form.name.errors}}
+                  </div>
+                </div>
+                <div class="col-12 col-sm-12 col-md-6 col-lg-6">
+                  <div class="oh-input__group">
+                    <label class="oh-input__label" for="{{operation_form.description.id_for_label}}" >{% trans "Description" %}</label>
+                    {{operation_form.description }}
+                    {{operation_form.description.errors }}
+                  </div>
+                </div>
+              </div>
+              <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operation_form.related_asset.id_for_label}}" >{% trans "Related Asset" %}</label>
+                {{operation_form.related_asset}}
+                {{operation_form.related_asset.errors}}
+              </div>
+              <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operation_form.frequency.id_for_label}}" >{% trans "Schedule" %}</label>
+                {{operation_form.frequency}}
+                {{operation_form.frequency.errors}}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="oh-btn-group flex-row-reverse mt-4" style="border:none;">
+        <button type="submit" class="oh-btn oh-btn--secondary oh-btn--shadow">
+          {% trans "Save" %}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endif %}
+
+<script>
+  // $(document).ready(function() {
+  //   $("#id_expiry_date").on('change', function() {
+  //     $(".notify").removeClass('d-none');
+  //   })
+  // })
+  // $("#id_expiry_date").change()
+
+  function handleFormSubmit() {
+
+    $('#successMessage').show();
+
+    setTimeout(function() {
+        $('#successMessage').hide();
+    }, 3000);
+
+    return false; // Prevent the default form submission
+  }
+
+
+</script>

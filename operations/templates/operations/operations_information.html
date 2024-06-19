@@ -1,0 +1,56 @@
+{% load i18n %}
+<div class="oh-modal__dialog-header">
+  <span class="oh-modal__dialog-title" id="assetModalLabel">{{operation.name}}</span>
+  <button class="oh-modal__close" aria-label="Close" style="top:17px" >
+      <ion-icon name="close-outline"></ion-icon>
+  </button>
+</div>
+<div class="oh-modal__dialog-body oh-modal__dialog-relative">
+
+<div class="row">
+  {% comment %} <div class="col-12 col-md-12 col-lg-12">
+    <div class="oh-modal__group mt-2">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Operation Name" %}</label>
+      <label class="oh-timeoff-modal__stat-count">{{operation.name}}</label>
+    </div>
+  </div> {% endcomment %}
+  {% if operation.description %}
+  <div class="col-12 col-md-12 col-lg-12 mt-3">
+    <div class="oh-modal__group">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Description" %}</label>
+      <div class="oh-modal__description">
+        {{operation.description}}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-12 col-md-12 col-lg-6 mt-3">
+    <div class="oh-modal__group">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Frequency" %}</label>
+      <label class="oh-timeoff-modal__stat-count dateformat_changer">{{operation.frequency}}</label>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-12 col-lg-6 mt-3">
+    <div class="oh-modal__group">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Related Asset" %}</label>
+      <label class="oh-timeoff-modal__stat-count">{{operation.related_asset.asset_name}}</label>
+    </div>
+  </div>
+
+  <div class="oh-btn-group">
+    <a hx-get="{% url 'operation-update' operation_id=operation.id %}?{{pg}}&requests_ids={{requests_ids}}"
+      data-toggle="oh-modal-toggle"
+      data-target="#objectUpdateModal"
+      hx-target="#objectUpdateModalTarget"
+      class="oh-btn oh-btn--info"
+      style="width: 50%;"
+    >
+      <ion-icon name="create-outline" role="img" class="md hydrated" aria-label="create outline"></ion-icon>{% trans "Edit" %}
+    </a>
+  </div>
+
+  </div>
+</div>
+</div>

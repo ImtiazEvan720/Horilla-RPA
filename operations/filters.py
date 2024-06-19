@@ -11,7 +11,7 @@ from django_filters import FilterSet
 from base.methods import reload_queryset
 from horilla.filters import filter_by_name
 
-from .models import Asset, AssetAssignment, AssetCategory, AssetRequest
+from .models import Operation,OperationLog
 
 
 class CustomFilterSet(FilterSet):
@@ -66,28 +66,7 @@ class CustomFilterSet(FilterSet):
                 field.lookup_expr = "icontains"
 
 
-class AssetExportFilter(CustomFilterSet):
-    """
-    Custom filter class for exporting filtered Asset data.
-    """
-
-    class Meta:
-        """
-        A nested class that specifies the configuration for the filter.
-            model(class): The Asset model is used to filter.
-            fields (str): A special value "__all__" to include all fields
-                          of the model in the filter.
-        """
-
-        model = Asset
-        fields = "__all__"
-
-    def __init__(self, *args, **kwargs):
-        super(AssetExportFilter, self).__init__(*args, **kwargs)
-        self.form.fields["asset_purchase_date"].widget.attrs.update({"type": "date"})
-
-
-class AssetFilter(CustomFilterSet):
+class OperationFilter(CustomFilterSet):
     """
     Custom filter set for Asset instances.
     """
@@ -100,240 +79,31 @@ class AssetFilter(CustomFilterSet):
                           of the model in the filter.
         """
 
-        model = Asset
+        model = Operation
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):
-        super(AssetFilter, self).__init__(*args, **kwargs)
+        super(OperationFilter, self).__init__(*args, **kwargs)
         for visible in self.form.visible_fields():
             visible.field.widget.attrs["id"] = str(uuid.uuid4())
 
-
-class CustomAssetFilter(CustomFilterSet):
+class OperationLogFilter(CustomFilterSet):
     """
-    Custom filter set for asset assigned to employees instances.
+    Custom filter set for Asset instances.
     """
-
-    asset_id__asset_name = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         """
-        Specifies the model and fields to be used for filtering AssetAssignment instances.
-
-        Attributes:
-        model (class): The model class AssetAssignment to be filtered.
-        fields (list): The fields to include in the filter, referring to
-                       related AssetAssignment fields.
-        """
-
-        model = AssetAssignment
-        fields = [
-            "asset_id__asset_name",
-            "asset_id__asset_status",
-        ]
-
-    def __init__(self, *args, **kwargs):
-        super(CustomAssetFilter, self).__init__(*args, **kwargs)
-        for visible in self.form.visible_fields():
-            visible.field.widget.attrs["id"] = str(uuid.uuid4())
-
-
-class AssetRequestFilter(CustomFilterSet):
-    """
-    Custom filter set for AssetRequest instances.
-    """
-
-    search = django_filters.CharFilter(method="search_method")
-
-    def search_method(self, queryset, _, value: str):
-        """
-        This method is used to search employees
-        """
-        values = value.split(" ")
-        empty = queryset.model.objects.none()
-        for split in values:
-            empty = empty | (
-                queryset.filter(
-                    requested_employee_id__employee_first_name__icontains=split
-                )
-                | queryset.filter(
-                    requested_employee_id__employee_last_name__icontains=split
-                )
-            )
-        return empty.distinct()
-
-    class Meta:
-        """
-        Specifies the model and fields to be used for filtering AssetRequest instances.
-
-        Attributes:
-        model (class): The model class AssetRequest to be filtered.
-        fields (str): A special value "__all__" to include all fields of the model in the filter.
-        """
-
-        model = AssetRequest
-        fields = "__all__"
-
-    def __init__(self, *args, **kwargs):
-        super(AssetRequestFilter, self).__init__(*args, **kwargs)
-        for visible in self.form.visible_fields():
-            visible.field.widget.attrs["id"] = str(uuid.uuid4())
-
-
-class AssetAllocationFilter(CustomFilterSet):
-    """
-    Custom filter set for AssetAllocation instances.
-    """
-
-    search = django_filters.CharFilter(method="search_method")
-
-    def search_method(self, queryset, _, value: str):
-        """
-        This method is used to search employees
-        """
-        values = value.split(" ")
-        empty = queryset.model.objects.none()
-        for split in values:
-            empty = empty | (
-                queryset.filter(
-                    assigned_to_employee_id__employee_first_name__icontains=split
-                )
-                | queryset.filter(
-                    assigned_to_employee_id__employee_last_name__icontains=split
-                )
-            )
-        return empty.distinct()
-
-    class Meta:
-        """
-        Specifies the model and fields to be used for filtering AssetAllocation instances.
-
-        Attributes:
-            model (class): The model class AssetAssignment to be filtered.
+        A nested class that specifies the configuration for the filter.
+            model(class): The Asset model is used to filter.
             fields (str): A special value "__all__" to include all fields
                           of the model in the filter.
         """
 
-        model = AssetAssignment
+        model = OperationLog
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):
-        super(AssetAllocationFilter, self).__init__(*args, **kwargs)
+        super(OperationLogFilter, self).__init__(*args, **kwargs)
         for visible in self.form.visible_fields():
-            visible.field.widget.attrs["id"] = str(uuid.uuid4())
-
-
-class AssetCategoryFilter(CustomFilterSet):
-    """
-    Custom filter set for AssetCategory instances.
-    """
-
-    class Meta:
-        """
-        Specifies the model and fields to be used for filtering AssetCategory instances.
-
-        Attributes:
-            model (class): The model class AssetCategory to be filtered.
-            fields (str): A special value "__all__" to include all fields
-                          of the model in the filter.
-        """
-
-        model = AssetCategory
-        fields = "__all__"
-
-    def __init__(self, *args, **kwargs):
-        super(AssetCategoryFilter, self).__init__(*args, **kwargs)
-        for visible in self.form.visible_fields():
-            visible.field.widget.attrs["id"] = str(uuid.uuid4())
-
-
-class AssetRequestReGroup:
-    """
-    Class to keep the field name for group by option
-    """
-
-    fields = [
-        ("", "Select"),
-        ("requested_employee_id", "Employee"),
-        ("asset_category_id", "Asset Category"),
-        ("asset_request_date", "Request Date"),
-        ("asset_request_status", "Status"),
-    ]
-
-
-class AssetAllocationReGroup:
-    """
-    Class to keep the field name for group by option
-    """
-
-    fields = [
-        ("", "Select"),
-        ("assigned_to_employee_id", "Employee"),
-        ("assigned_date", "Assigned Date"),
-        ("return_date", "Return Date"),
-    ]
-
-
-class AssetHistoryFilter(CustomFilterSet):
-    """
-    Custom filter set for AssetAssignment instances for filtering in asset history view.
-    """
-
-    search = django_filters.CharFilter(
-        field_name="asset_id__asset_name", lookup_expr="icontains"
-    )
-    returned_assets = django_filters.CharFilter(
-        field_name="return_status", method="exclude_none"
-    )
-    return_date_gte = django_filters.DateFilter(
-        field_name="return_date",
-        lookup_expr="gte",
-        widget=forms.DateInput(attrs={"type": "date"}),
-    )
-    return_date_lte = django_filters.DateFilter(
-        field_name="return_date",
-        lookup_expr="lte",
-        widget=forms.DateInput(attrs={"type": "date"}),
-    )
-    assigned_date_gte = django_filters.DateFilter(
-        field_name="assigned_date",
-        lookup_expr="gte",
-        widget=forms.DateInput(attrs={"type": "date"}),
-    )
-    assigned_date_lte = django_filters.DateFilter(
-        field_name="assigned_date",
-        lookup_expr="lte",
-        widget=forms.DateInput(attrs={"type": "date"}),
-    )
-
-    def exclude_none(self, queryset, name, value):
-        if value == "True":
-            queryset = queryset.filter(return_status__isnull=False)
-        return queryset
-
-    class Meta:
-        """
-        Specifies the model and fields to be used for filtering AssetAllocation instances.
-
-        Attributes:
-            model (class): The model class AssetAssignment to be filtered.
-            fields (str): A special value "__all__" to include all fields
-                          of the model in the filter.
-        """
-
-        model = AssetAssignment
-        fields = "__all__"
-
-
-class AssetHistoryReGroup:
-    """
-    Class to keep the field name for group by option
-    """
-
-    fields = [
-        ("", "Select"),
-        ("asset_id", "Asset"),
-        ("assigned_to_employee_id", "Employee"),
-        ("assigned_date", "Assigned Date"),
-        ("return_date", "Return Date"),
-    ]
+            visible.field.widget.attrs["id"] = str(uuid.uuid4())            
