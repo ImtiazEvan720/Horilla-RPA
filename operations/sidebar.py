@@ -19,10 +19,11 @@ SUBMENUS = [
         "redirect": reverse("operations-list"),
         "accessability": "operations.sidebar.dashboard_accessability",
     },
-    # {
-    #     "menu": trans("Request and Allocation"),
-    #     "redirect": reverse("asset-request-allocation-view"),
-    # },
+    {
+        "menu": trans("Operation Logs"),
+        "redirect": reverse("operationlog-list"),
+        "accessability": "operations.sidebar.dashboard_accessability",
+    },
     # {
     #     "menu": trans("Asset History"),
     #     "redirect": reverse("asset-history"),

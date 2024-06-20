@@ -1,0 +1,62 @@
+{% load static i18n %}
+{% if messages %}
+<div class="oh-wrapper">
+  {% for message in messages %}
+  <div class="oh-alert-container">
+    <div class="oh-alert oh-alert--animated {{message.tags}}">
+      {{ message }}
+    </div>
+  </div>
+  {% endfor %}
+  <script>
+      setTimeout(function () {
+        $('.oh-modal__close').click()
+      }, 1000);
+  </script>
+</div>
+{% endif %}
+<div class="oh-modal__dialog-header">
+    <button
+    type="button"
+    class="oh-modal__close"
+    data-dismiss="oh-modal"
+    aria-label="Close"
+    >
+    <ion-icon name="close-outline"></ion-icon>
+    </button>
+    <span class="oh-modal__dialog-title ml-5" id="addEmployeeObjectiveModalLabel">
+        <h5>{% trans "Operation Log Creation" %}</h5>
+    </span>
+</div>
+<div class="oh-modal__dialog-body">
+    <form hx-post="{%url 'operationlog-creation' %}" hx-target="#objectCreateModalTarget">
+        {% csrf_token %}
+        <div class="oh-profile-section pt-0">
+            <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operationlog_form.operation.id_for_label}}">{% trans "Operation" %}</label>
+                {{operationlog_form.operation}}
+                {{operationlog_form.operation.errors}}
+            </div>
+            <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operationlog_form.description.id_for_label}}">{% trans "Performed By" %}</label>
+                {{operationlog_form.performed_by}}
+                {{operationlog_form.performed_by.errors}}
+            </div>
+            <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operationlog_form.frequency.id_for_label}}">{% trans "Date" %}</label>
+                {{operationlog_form.date}}
+                {{operationlog_form.date.errors}}
+            </div>
+            <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operationlog_form.related_asset.id_for_label}}">{% trans "Notes" %}</label>
+                {{operationlog_form.notes}}
+                {{operationlog_form.notes.errors}}
+            </div>
+            <div class="oh-modal__dialog-footer p-0 mt-3">
+                <button type="submit" class="oh-btn oh-btn--secondary oh-btn--shadow" >
+                    {% trans "Save" %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

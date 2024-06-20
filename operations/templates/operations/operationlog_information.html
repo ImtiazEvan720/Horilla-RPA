@@ -1,0 +1,44 @@
+{% load i18n %}
+<div class="oh-modal__dialog-header">
+  <span class="oh-modal__dialog-title" id="assetModalLabel">{{operationlog.operation.name}}</span>
+  <button class="oh-modal__close" aria-label="Close" style="top:17px" >
+      <ion-icon name="close-outline"></ion-icon>
+  </button>
+</div>
+<div class="oh-modal__dialog-body oh-modal__dialog-relative">
+
+<div class="row">
+  {% comment %} <div class="col-12 col-md-12 col-lg-12">
+    <div class="oh-modal__group mt-2">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Operation" %}</label>
+      <label class="oh-timeoff-modal__stat-count">{{operationlog.operation.name}}</label>
+    </div>
+  </div> {% endcomment %}
+  {% if operationlog.performed_by %}
+  <div class="col-12 col-md-12 col-lg-12 mt-3">
+    <div class="oh-modal__group">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Performed By" %}</label>
+      <div class="oh-modal__description">
+        {{operationlog.performed_by.get_full_name}}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-12 col-md-12 col-lg-6 mt-3">
+    <div class="oh-modal__group">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Date" %}</label>
+      <label class="oh-timeoff-modal__stat-count">{{formatted_date}}</label>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-12 col-lg-6 mt-3">
+    <div class="oh-modal__group">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Notes" %}</label>
+      <label class="oh-timeoff-modal__stat-count">{{operationlog.notes}}</label>
+    </div>
+  </div>
+
+  </div>
+</div>
+</div>

@@ -13,6 +13,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
+from django.forms import TextInput,DateTimeInput
 
 # from asset.models import (
 #     Asset,
@@ -40,6 +41,16 @@ class OperationForm(ModelForm):
         model = Operation
         fields = "__all__"
         exclude = ["is_active"]
+
+class OperationlogForm(ModelForm):
+
+    class Meta:
+        model = OperationLog
+        fields = "__all__"
+        exclude = ["is_active"]
+        widgets = {
+            "date": DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+        }
 
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)

@@ -12,48 +12,17 @@ from base.views import object_duplicate
 from . import views
 
 urlpatterns = [
-    # path("asset-creation/<int:id>/", views.asset_creation, name="asset-creation"),
-    # path("asset-list/<int:cat_id>", views.asset_list, name="asset-list"),
+    path("dashboard/", views.operations_dashboard, name="operations-dashboard"),
+    path("operation-list/", views.operations_list, name="operations-list"),
     path("operation-update/<int:operation_id>/", views.operation_update, name="operation-update"),
-    # path(
-    #     "duplicate-asset/<int:obj_id>/",
-    #     object_duplicate,
-    #     name="duplicate-asset",
-    #     kwargs={
-    #         "model": Asset,
-    #         "form": AssetForm,
-    #         "form_name": "asset_creation_form",
-    #         "template": "asset/asset_creation.html",
-    #     },
-    # ),
-    # path("asset-delete/<int:asset_id>/", views.asset_delete, name="asset-delete"),
-    path(
-        "operation-information/<int:operation_id>/",
-        views.operation_information,
-        name="operation-information",
-    ),
-    # path("asset-category-view/", views.asset_category_view, name="asset-category-view"),
-    # path(
-    #     "asset-category-view-search-filter",
-    #     views.asset_category_view_search_filter,
-    #     name="asset-category-view-search-filter",
-    # ),
-    # path(
-    #     "asset-category-duplicate/<int:obj_id>/",
-    #     object_duplicate,
-    #     name="asset-category-duplicate",
-    #     kwargs={
-    #         "model": AssetCategory,
-    #         "form": AssetCategoryForm,
-    #         "form_name": "asset_category_form",
-    #         "template": "category/asset_category_creation.html",
-    #     },
-    # ),
-    path(
-        "operation-creation",
-        views.operation_creation,
-        name="operation-creation",
-    ),
+    path("operation-delete/<int:operation_id>/", views.operation_delete, name="operation-delete"),
+    path("operation-information/<int:operation_id>/",views.operation_information,name="operation-information"),
+    path("operation-creation",views.operation_creation,name="operation-creation"),
+    path("operationlog-list/", views.operationlog_list, name="operationlog-list"),
+    # path("operationLog-update/<int:operation_id>/", views.operationLog_update, name="operation-update"),
+    # path("operationLog-delete/<int:operation_id>/", views.operationLog_delete, name="operation-delete"),
+    path("operationlog-information/<int:operationlog_id>/",views.operationlog_information,name="operationlog-information"),
+    path("operationlog-creation",views.operationlog_creation,name="operationlog-creation"),
     # path(
     #     "asset-category-update/<int:cat_id>",
     #     views.asset_category_update,
@@ -150,8 +119,6 @@ urlpatterns = [
     #     views.add_asset_report,
     #     name="add-asset-report",
     # ),
-    path("dashboard/", views.operations_dashboard, name="operations-dashboard"),
-    path("operation-list/", views.operations_list, name="operations-list"),
     # path(
     #     "asset-available-chart/",
     #     views.asset_available_chart,

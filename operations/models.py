@@ -109,7 +109,7 @@ class Operation(HorillaModel):
 class OperationLog(HorillaModel):
     operation = models.ForeignKey(Operation, on_delete=models.PROTECT, null=True, blank=True)
     performed_by = models.ForeignKey(Employee,on_delete=models.PROTECT, null=True, blank=True)
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(null=True, blank=True, verbose_name=_("Operation Schedule Date"))
     notes = models.TextField(null=True, blank=True)
 
     def __str__(self):
