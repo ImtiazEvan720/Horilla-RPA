@@ -53,9 +53,9 @@
             </a>
         </div>
         <div class="oh-main__titlebar oh-main__titlebar--right">
-            <div class="oh-input-group oh-input__search-group "
+            <!-- <div class="oh-input-group oh-input__search-group "
                 :class="searchShow ? 'oh-input__search-group--show' : ''">
-                <!-- search form start -->
+                 search form start
                 <form id="searchForm"  hx-get="{% url 'asset-category-view-search-filter' %}?asset_list=asset" hx-target="#assetCategoryList">
                     <ion-icon name="search-outline" class="oh-input-group__icon oh-input-group__icon--left"></ion-icon>
                     <input name="search" type="text" id="assetSearchField" class="oh-input oh-input__icon " aria-label="Search Input" placeholder="{% trans 'Search' %}" />
@@ -67,27 +67,27 @@
                         <option value="category" >{% trans "Search in :Asset Category" %}</option>
                     </select>
                 </form>
-                <!-- end of search -->
-            </div>
+                 end of search 
+            </div> -->
             <div class="oh-main__titlebar-button-container">
-                {% if perms.asset.view_assetlot %}
+                <!-- {% if perms.asset.view_assetlot %}
                     <a href="{% url 'asset-batch-view'%}">
                         <button class="oh-btn ml-2"> <ion-icon name="list-outline" class="me-1"></ion-icon>{% trans "Batch No" %}</button>
                     </a>
-                {% endif %}
+                {% endif %} -->
                 <!-- import asset start  -->
 
                 <!-- import asset end  -->
                 <!-- asset export start  -->
-                {% comment %} <div class="oh-dropdown">
+                <!-- {% comment %} <div class="oh-dropdown">
                     <button class="oh-btn ml-2">
                         <ion-icon name="arrow-up-outline" class="me-1"></ion-icon> {% trans "Export" %}
                     </button>
 
-                </div> {% endcomment %}
+                </div> {% endcomment %} -->
                 <!--  asset export end  -->
                 <!--  asset filter  -->
-                <div class="oh-dropdown" x-data="{open: false}">
+                <!-- <div class="oh-dropdown" x-data="{open: false}">
                     <button class="oh-btn ml-2" @click="open = !open">
                         <ion-icon name="filter" class="mr-1"></ion-icon>{% trans "Filter" %}<div id="filterCount"></div>
                     </button>
@@ -171,8 +171,8 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                {% comment %} <div class="oh-dropdown" >
+                </div> -->
+                <!-- {% comment %} <div class="oh-dropdown" >
                     <div class="oh-dropdown__import oh-dropdown__import--right " style="display: none;top:40px" id ="import-dropdown" >
                         <button class="oh-modal__close close-import"  aria-label="Close">
                             <ion-icon name="close-outline"></ion-icon>
@@ -192,9 +192,9 @@
                                 class="oh-btn oh-btn--small oh-btn--secondary w-100 mt-3">{% trans "Upload" %}</button>
                         </form>
                     </div>
-                </div> {% endcomment %}
+                </div> {% endcomment %} -->
                 <!-- asset filter end -->
-                <div class="oh-dropdown ml-2" x-data="{open: false}">
+                <!-- <div class="oh-dropdown ml-2" x-data="{open: false}">
                     <button
                       onclick="event.stopPropagation();event.preventDefault()"
                       class="oh-btn oh-btn--dropdown"
@@ -229,7 +229,7 @@
                           </li>
                       </ul>
                     </div>
-                  </div>
+                  </div> -->
                 <div class="oh-btn-group ml-2">
                     {% if perms.asset.add_operationlog %}
                         <div>

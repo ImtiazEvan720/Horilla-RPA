@@ -294,6 +294,70 @@ def operationlog_information(request, operationlog_id):
     
     return render(request, "operations/operationlog_information.html", context)
 
+@login_required
+@permission_required(perm="operation.delete_operation")
+def operationlog_delete(request, operationlog_id):
+    """Delete the asset with the given id.
+    If the asset is currently in use, display an info message and
+    redirect to the asset list.
+    Otherwise, delete the asset and display a success message.
+    Args:
+        request: HttpRequest object representing the current request.
+        asset_id: int representing the id of the asset to be deleted.
+    Returns:
+        If the asset is currently in use or the asset list filter is
+        applied, render the asset list template
+        with the corresponding context.
+        Otherwise, redirect to the asset list view for the asset
+        category of the deleted asset.
+    """
+    try:
+        operationlog = OperationLog.objects.get(id=operationlog_id)
+    except Operation.DoesNotExist:
+        messages.error(request, _("Operation log not found"))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
+
+    try:
+        operationlog.delete()
+        messages.success(request, _("Operation log deleted successfully"))
+    except ProtectedError:
+        messages.error(request, _("You cannot delete this operation log."))
+
+    return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
+
+def operationlog_update(request, operationlog_id):
+    """
+    Updates an asset with the given ID.
+    If the request method is GET, it displays the form to update the asset. If the
+    request method is POST and the form is valid, it updates the asset and
+    redirects to the asset list view for the asset's category.
+    Args:
+    - request: the HTTP request object
+    - id (int): the ID of the asset to be updated
+    Returns:
+    - If the request method is GET, the rendered 'asset_update.html' template
+      with the form to update the asset.
+    - If the request method is POST and the form is valid, a redirect to the asset
+      list view for the asset's category.
+    """
+
+    instance = OperationLog.objects.get(id=operationlog_id)
+    operationlog_form = OperationlogForm(instance=instance)
+    previous_data = request.GET.urlencode()
+
+    if request.method == "POST":
+        operationlog_form = OperationlogForm(request.POST, instance=instance)
+        if operationlog_form.is_valid():
+            operationlog_form.save()
+            messages.success(request, _("Operation Updated"))
+            return HttpResponse("<script>window.location.reload();</script>")
+    context = {
+        "operationlog_form": operationlog_form,
+        "pg": previous_data,
+    }
+
+    return render(request, "operations/operationlog_update.html", context=context)
+
 # @login_required
 # @permission_required(perm="asset.view_assetcategory")
 # def asset_available_chart(request):

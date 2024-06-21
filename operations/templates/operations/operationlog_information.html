@@ -39,6 +39,23 @@
     </div>
   </div>
 
+  <div class="oh-btn-group">
+
+    <a hx-get="{% url 'operationlog-update' operationlog_id=operationlog.id %}?{{pg}}&requests_ids={{requests_ids}}"
+      data-toggle="oh-modal-toggle"
+      data-target="#objectUpdateModal"
+      hx-target="#objectUpdateModalTarget"
+      class="oh-btn oh-btn--info"
+      style="width: 50%;"
+    >
+      <ion-icon name="create-outline" role="img" class="md hydrated" aria-label="create outline"></ion-icon>{% trans "Edit" %}
+    </a>
+
+    <a href="{% url 'operationlog-delete' operationlog.id %}?{{pg}}" onclick="event.preventDefault();event.stopPropagation(); confirm(`Do you want to delete this operation?`)" class="oh-btn oh-btn--danger" style="width: 50%;">
+      <ion-icon name="trash-outline" role="img" class="md hydrated" aria-label="create outline"></ion-icon>{% trans "Delete" %}
+      </a>
+  </div>
+
   </div>
 </div>
 </div>

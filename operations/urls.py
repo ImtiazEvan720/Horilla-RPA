@@ -19,8 +19,8 @@ urlpatterns = [
     path("operation-information/<int:operation_id>/",views.operation_information,name="operation-information"),
     path("operation-creation",views.operation_creation,name="operation-creation"),
     path("operationlog-list/", views.operationlog_list, name="operationlog-list"),
-    # path("operationLog-update/<int:operation_id>/", views.operationLog_update, name="operation-update"),
-    # path("operationLog-delete/<int:operation_id>/", views.operationLog_delete, name="operation-delete"),
+    path("operationlog-update/<int:operationlog_id>/", views.operationlog_update, name="operationlog-update"),
+    path("operationlog-delete/<int:operationlog_id>/", views.operationlog_delete, name="operationlog-delete"),
     path("operationlog-information/<int:operationlog_id>/",views.operationlog_information,name="operationlog-information"),
     path("operationlog-creation",views.operationlog_creation,name="operationlog-creation"),
     # path(
