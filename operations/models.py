@@ -107,9 +107,9 @@ class Operation(HorillaModel):
         return self.name
 
 class OperationLog(HorillaModel):
-    operation = models.ForeignKey(Operation, on_delete=models.PROTECT, null=True, blank=True)
-    performed_by = models.ForeignKey(Employee,on_delete=models.PROTECT, null=True, blank=True)
-    date = models.DateTimeField(null=True, blank=True, verbose_name=_("Operation Schedule Date"))
+    operation = models.ForeignKey(Operation, on_delete=models.PROTECT)
+    performed_by = models.ForeignKey(Employee,on_delete=models.PROTECT)
+    date = models.DateTimeField(verbose_name=_("Operation Schedule Date"))
     notes = models.TextField(null=True, blank=True)
 
     def __str__(self):

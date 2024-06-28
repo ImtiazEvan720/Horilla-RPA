@@ -15,6 +15,19 @@
   </script>
 </div>
 {% endif %}
+
+{% if operationlog_form.errors %}
+<div class="oh-wrapper">
+    {% for error in operationlog_form.non_field_errors %}
+    <div class="oh-alert-container">
+        <div class="oh-alert oh-alert--animated oh-alert--danger">
+        {{ error }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="oh-modal__dialog-header">
     <button
     type="button"

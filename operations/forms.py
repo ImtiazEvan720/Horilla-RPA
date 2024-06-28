@@ -7,13 +7,14 @@ including asset creation, allocation, return, category assignment, and batch han
 """
 
 import uuid
-from datetime import date
+from datetime import date,datetime
 
 from django import forms
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from django.forms import TextInput,DateTimeInput
+from base import thread_local_middleware
 
 # from asset.models import (
 #     Asset,
@@ -52,9 +53,14 @@ class OperationlogForm(ModelForm):
             "date": DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
         }
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.fields["operation_id"].widget.attrs["disabled"] = "disabled"
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        initial = kwargs.get('initial', {})
+        request = getattr(thread_local_middleware._thread_locals, "request", None)
+        initial['date'] = datetime.now()
+        initial['performed_by'] = request.user.employee_get
+        kwargs['initial'] = initial
+        super().__init__(*args, **kwargs)
 
 # def set_date_field_initial(instance):
 #     """this is used to update change the date value format"""
