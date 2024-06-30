@@ -285,12 +285,7 @@ def operationlog_information(request, operationlog_id):
     """
 
     operationLog = OperationLog.objects.get(id=operationlog_id)
-     # Format datetime field including time
-    if operationLog.date:
-        formatted_date = operationLog.date.strftime("%m/%d/%Y, %H:%M")
-    else:
-        formatted_date = ""
-    context = {"operationlog": operationLog,"formatted_date":formatted_date}
+    context = {"operationlog": operationLog}
     
     return render(request, "operations/operationlog_information.html", context)
 

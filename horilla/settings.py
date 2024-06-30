@@ -159,13 +159,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+# LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "Asia/Kolkata"
+# TIME_ZONE = "Asia/Kolkata"
 
-USE_I18N = True
+# USE_I18N = True
 
-USE_TZ = True
+# USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -229,7 +229,7 @@ LOCALE_PATHS = [
     join(BASE_DIR, "horilla", "locale"),
 ]
 
-TIME_ZONE = "Asia/Kolkata"
+TIME_ZONE = "America/Chicago"
 
 USE_I18N = True
 

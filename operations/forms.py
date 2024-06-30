@@ -8,6 +8,7 @@ including asset creation, allocation, return, category assignment, and batch han
 
 import uuid
 from datetime import date,datetime
+from django.utils import timezone
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -57,7 +58,7 @@ class OperationlogForm(ModelForm):
         super().__init__(*args, **kwargs)
         initial = kwargs.get('initial', {})
         request = getattr(thread_local_middleware._thread_locals, "request", None)
-        initial['date'] = datetime.now()
+        initial['date'] = timezone.now()
         initial['performed_by'] = request.user.employee_get
         kwargs['initial'] = initial
         super().__init__(*args, **kwargs)
