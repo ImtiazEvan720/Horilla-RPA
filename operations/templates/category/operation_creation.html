@@ -1,3 +1,9 @@
+<style>
+    * {
+        pointer-events: none; /* Prevent tooltip display */
+    }
+</style>
+
 {% load static i18n %}
 {% if messages %}
 <div class="oh-wrapper">
@@ -48,6 +54,11 @@
                 {{operation_form.frequency.errors}}
             </div>
             <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operation_form.assigned_to.id_for_label}}">{% trans "Assigned To" %}</label>
+                {{operation_form.assigned_to}}
+                {{operation_form.assigned_to.errors}}
+            </div>
+            <div class="oh-input__group ">
                 <label class="oh-input__label" for="{{operation_form.related_asset.id_for_label}}">{% trans "Related Asset" %}</label>
                 {{operation_form.related_asset}}
                 {{operation_form.related_asset.errors}}
@@ -60,3 +71,5 @@
         </div>
     </form>
 </div>
+
+    
