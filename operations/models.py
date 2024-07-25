@@ -6,7 +6,7 @@ within an Asset Management System.
 """
 from celery import shared_task
 import json
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
+from django_celery_beat.models import PeriodicTask, CrontabSchedule, IntervalSchedule
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -26,6 +26,7 @@ class Operation(HorillaModel):
     MAINTENANCE_SCHEDULE = [
         ("Once",_("Once")),
         ("OnDemand",_("On Demand")),
+        ("EveryOtherMin",_("Every Other Min")),
         ("Daily", _("Daily")),
         ("Weekly", _("Weekly")),
         ("Monthly", _("Monthly")),
@@ -64,35 +65,77 @@ def schedule_operation_logs(sender, instance, **kwargs):
 
     if instance.frequency == "Once":
         create_operation_log.apply_async((instance.id,), countdown=0)    
-        # interval = IntervalSchedule.objects.ntervalSchedule.objects.get_or_create(
-        # every=interval,
-        # defaults={
-        #     'period': IntervalSchedule.NEVER,  # Assuming you have a constant like NEVER defined in your model
-        # }) 
-    elif instance.frequency == "Daily":
-        create_operation_log.apply_async((instance.id,), countdown=120)  # 24 hours
-        # interval = IntervalSchedule.objects.get_or_create(every=1,period='days')
-    elif instance.frequency == "Weekly":
-        create_operation_log.apply_async((instance.id,), countdown=604800)  # 7 days
-        # interval = IntervalSchedule.objects.get_or_create(every=7,period='days')
-    elif instance.frequency == "Monthly":
-        create_operation_log.apply_async((instance.id,), countdown=2592000)  # 30 days
-        # interval = IntervalSchedule.objects.get_or_create(every=30,period='days')
-    elif instance.frequency == "Yearly":
-        create_operation_log.apply_async((instance.id,), countdown=31536000)  # 1 year
-        # interval = IntervalSchedule.objects.get_or_create(every=365,period='days')
-    # Add more logic if needed for OnDemand or other frequencies
+    elif instance.frequency == 'EveryOtherMin':
+        interval_schedule, created = IntervalSchedule.objects.get_or_create(
+            every=2,  # Adjust as per your interval definition
+            defaults={
+                'period': IntervalSchedule.MINUTES,  # Assuming DAYS is a constant in your model
+            }
+        )
 
-    # Retrieve or create the IntervalSchedule object with the desired interval
-    interval_schedule, created = IntervalSchedule.objects.get_or_create(
-        every=2,  # Adjust as per your interval definition
-        defaults={
-            'period': IntervalSchedule.MINUTES,  # Assuming DAYS is a constant in your model
-        }
-    )
-    PeriodicTask.objects.update_or_create(
-    interval=interval_schedule,
-    name=f'log-operation-{instance.id}',
-    task='horilla.tasks.create_operation_log',
-    args=json.dumps([instance.id]),
-    )
+        PeriodicTask.objects.update_or_create(
+        interval=interval_schedule,
+        name=f'log-operation-{instance.id}',
+        task='horilla.tasks.create_operation_log',
+        args=json.dumps([instance.id]),
+        )
+    elif instance.frequency == "Daily":
+        interval_schedule, created = IntervalSchedule.objects.get_or_create(
+            every=1,  # Adjust as per your interval definition
+            defaults={
+                'period': IntervalSchedule.DAYS,  # Assuming DAYS is a constant in your model
+            }
+        )
+        PeriodicTask.objects.update_or_create(
+        interval=interval_schedule,
+        name=f'log-operation-{instance.id}',
+        task='horilla.tasks.create_operation_log',
+        args=json.dumps([instance.id]),
+        )
+    elif instance.frequency == "Weekly":
+        crontab_schedule, created = CrontabSchedule.objects.get_or_create(
+            minute='0',
+            hour='0',
+            day_of_week='1',
+            day_of_month='*',
+            month_of_year='*'            
+        )
+
+        PeriodicTask.objects.update_or_create(
+        crontab=crontab_schedule,
+        name=f'log-operation-{instance.id}',
+        task='horilla.tasks.create_operation_log',
+        args=json.dumps([instance.id]),
+        )
+
+    elif instance.frequency == "Monthly":
+        crontab_schedule, created = CrontabSchedule.objects.get_or_create(
+            minute='0',
+            hour='0',
+            day_of_week='*',
+            day_of_month='1',
+            month_of_year='*'            
+        )
+
+        PeriodicTask.objects.update_or_create(
+        crontab=crontab_schedule,
+        name=f'log-operation-{instance.id}',
+        task='horilla.tasks.create_operation_log',
+        args=json.dumps([instance.id]),
+        )
+
+    elif instance.frequency == "Yearly":
+        crontab_schedule, created = CrontabSchedule.objects.get_or_create(
+            minute='0',
+            hour='0',
+            day_of_week='*',
+            day_of_month='*',
+            month_of_year='1'
+        )
+
+        PeriodicTask.objects.update_or_create(
+        crontab=crontab_schedule,
+        name=f'log-operation-{instance.id}',
+        task='horilla.tasks.create_operation_log',
+        args=json.dumps([instance.id]),
+        )
