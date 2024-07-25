@@ -145,3 +145,6 @@ whoosh_index/
 
 #VSCode
 .vscode/
+
+# Ignore Django's staticfiles directory
+staticfiles/

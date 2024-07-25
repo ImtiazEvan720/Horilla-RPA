@@ -17,6 +17,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils import formats
+from django.template.loader import get_template
+from weasyprint import HTML
 
 from operations.filters import(
     OperationFilter,
@@ -383,3 +385,33 @@ def operationlog_update(request, operationlog_id):
         messages.success(request, _("Log Created"))
         return HttpResponse("<script>window.location.reload();</script>")
     return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
+
+@login_required
+def generate_pdf(request):
+    # Retrieve data or context needed for your PDF
+
+    user = request.user  # Assuming 'request' is available in your view
+
+    if user.is_superuser:  # Example permission check
+        operationLogs = OperationLog.objects.all()
+    else:                
+        # Filter OperationLog objects where performed_by is the current request user's employee instance
+        operationLogs = OperationLog.objects.filter(performed_by=request.user.employee_get)
+    
+    context = {
+        'operation_logs':operationLogs,
+        'title': 'Operation Logs',
+        'content': 'Operation Logs for Employee ' + request.user.employee_get.get_full_name(),
+    }
+
+    # Render HTML template
+    template = get_template('operations/pdf_template.html')
+    html_content = template.render(context)
+
+    # Generate PDF using WeasyPrint
+    pdf_file = HTML(string=html_content).write_pdf()
+
+    # Return PDF response
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = 'filename="sample.pdf"'
+    return response

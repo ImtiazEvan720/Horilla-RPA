@@ -24,6 +24,7 @@ urlpatterns = [
     path("operationlog-information/<int:operationlog_id>/",views.operationlog_information,name="operationlog-information"),
     path("operationlog-creation",views.operationlog_creation,name="operationlog-creation"),
     path("operationlog-toggle-approved/<int:operationlog_id>/<str:approved_value>/",views.operationlog_update_approval,name="operationlog-toggle-approved"),
+    path('generate-pdf/', views.generate_pdf, name='generate-pdf')
     # path(
     #     "asset-category-update/<int:cat_id>",
     #     views.asset_category_update,

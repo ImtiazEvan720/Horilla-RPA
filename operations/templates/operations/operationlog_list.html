@@ -242,7 +242,12 @@
                             {% trans "Create" %}
                             </a>
                         </div>
-                {% endif %}
+                    {% endif %}
+                        <div>
+                          <a  href="#" class="oh-btn oh-btn--secondary oh-btn--shadow" id="generatePdfBtn">                          
+                          {% trans "Generate Report" %}
+                          </a>
+                      </div>
                 </div>
             </div>
         </div>
@@ -526,6 +531,34 @@
           // Handle error scenario
         });
       })
+
+      document.getElementById('generatePdfBtn').addEventListener('click', function() {
+            // AJAX request to Django view for PDF generation
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '{% url "generate-pdf" %}', true);
+            xhr.responseType = 'blob';  // Response type is blob (binary data)
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var blob = xhr.response;
+                    var url = URL.createObjectURL(blob);
+
+                    // Open PDF in a new tab
+                    var newTab = window.open(url, '_blank');
+                    if (newTab) {
+                        newTab.focus();
+                    } else {
+                        alert('Please allow popups for this site');
+                    }
+
+                    // Clean up
+                    URL.revokeObjectURL(url);
+                }
+            };
+
+            xhr.send();
+        });
+        
 
 
 </script>

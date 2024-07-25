@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <style>
+        /* Define your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{title}}</h1>
+    <p>{{content}}</p>
+    {% for log in operation_logs|slice:":20" %}
+        <div class="operation-log">
+            <h2>{{ log.operation.name }}</h2>
+            <p><strong>Performed By:</strong> {{ log.performed_by }}</p>
+            <p><strong>Date:</strong> {{ log.date }}</p>
+            <p><strong>Notes:</strong> {{ log.notes }}</p>
+            <p><strong>Approved:</strong> {{ log.approved }}</p>
+        </div>
+    {% endfor %}
+</body>
+</html>
