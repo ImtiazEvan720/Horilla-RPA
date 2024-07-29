@@ -1,7 +1,8 @@
+
 <style>
     * {
         pointer-events: none; /* Prevent tooltip display */
-    }
+    }   
 </style>
 
 {% load static i18n %}
@@ -14,13 +15,14 @@
     </div>
   </div>
   {% endfor %}
-  <script>
+  <script>      
       setTimeout(function () {
         $('.oh-modal__close').click()
       }, 1000);
   </script>
 </div>
 {% endif %}
+
 <div class="oh-modal__dialog-header">
     <button
     type="button"
@@ -53,6 +55,11 @@
                 {{operation_form.frequency}}
                 {{operation_form.frequency.errors}}
             </div>
+            <div class="oh-input__group " id="preferred-time-field">
+                <label class="oh-input__label" for="{{operation_form.preferred_time.id_for_label}}">{% trans "Preferred Time" %}</label>
+                {{operation_form.preferred_time}}
+                {{operation_form.preferred_time.errors}}
+            </div>
             <div class="oh-input__group ">
                 <label class="oh-input__label" for="{{operation_form.assigned_to.id_for_label}}">{% trans "Assigned To" %}</label>
                 {{operation_form.assigned_to}}
@@ -72,4 +79,19 @@
     </form>
 </div>
 
+<script>
+    console.log("Script loaded !!");
     
+    $('#frequency-field').on("change",function(){
+        const targetFrequencies = ["Daily", "Monthly", "Weekly", "Yearly"];
+        selectedFrequency = $(this).val();
+        if(targetFrequencies.includes(selectedFrequency))
+        {
+            $('#preferred-time-field').removeClass('hidden');
+        }
+        else
+        {
+            $('#preferred-time-field').addClass('hidden');   
+        }
+    });
+</script>

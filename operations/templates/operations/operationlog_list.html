@@ -393,7 +393,44 @@
               <div class="oh-sticky-table__td">{{operationlog.performed_by.get_full_name}}</div>
               <div class="oh-sticky-table__td">{{operationlog.date}}</div>
               <div class="oh-sticky-table__td">{{operationlog.notes}}</div>
-              <div class="oh-sticky-table__td"><input type="checkbox" class="operationlog_checkbox" id="{{operationlog.id}}" {% if operationlog.approved %}checked{% endif %}></div>              
+              {% if operationlog.approved %}
+              <form action="{%url 'operationlog-toggle-approved' operationlog_id=operationlog.id approved_value='false' %}"
+                      onsubmit="return confirm('{% trans "Do you want to disapprove this operation log?" %}')"
+                      method="post" style="width:100%">
+                      {% csrf_token %}
+                      <button
+                        class="oh-btn oh-btn--secondary oh-btn--shadow"
+                        onclick="event.stopPropagation()"                        
+                        >
+                        {% trans 'Disapprove' %}
+                        <!-- <ion-icon
+                          name="trash-outline"
+                          role="img"
+                          class="md hydrated"
+                          aria-label="trash outline"
+                        ></ion-icon> -->
+                      </button>
+              </form>
+              {% else %}
+              <form action="{%url 'operationlog-toggle-approved' operationlog_id=operationlog.id approved_value='true' %}"
+                      onsubmit="return confirm('{% trans "Do you want to Approve this operation log?" %}')"
+                      method="post" style="width:100%">
+                      {% csrf_token %}
+                      <button
+                        class="oh-btn oh-btn--secondary oh-btn--shadow"
+                        onclick="event.stopPropagation()"                        
+                        >
+                        {% trans 'Approve' %}
+                        <!-- <ion-icon
+                          name="trash-outline"
+                          role="img"
+                          class="md hydrated"
+                          aria-label="trash outline"
+                        ></ion-icon> -->
+                      </button>
+              </form>
+              {% endif %}
+              <!-- <div class="oh-sticky-table__td"><input type="checkbox" class="operationlog_checkbox" id="{{operationlog.id}}" {% if operationlog.approved %}checked{% endif %}></div>               -->
               {% if perms.operations.change_operationlog or perms.operations.delete_operationlog %}              
               <div class="oh-sticky-table__td oh-sticky-table__right">
                 <div class="oh-btn-group">
@@ -497,40 +534,40 @@
         return false; // Prevent the default form submission
       }
 
-      $('.operationlog_checkbox').click(function() { 
-        var id = $(this).attr('id');
-        const isChecked = $(this).prop('checked');
-        const csrftoken = getCookie('csrftoken');
+      // $('.operationlog_checkbox').click(function() { 
+      //   var id = $(this).attr('id');
+      //   const isChecked = $(this).prop('checked');
+      //   const csrftoken = getCookie('csrftoken');
 
-        console.log('clicked ' + id);
+      //   console.log('clicked ' + id);
 
-        // Constructing the URL dynamically with base URL using Django template tags
-        var url = window.location.origin + '/operations/operationlog-toggle-approved/' + id + '/'+ isChecked+'/';
+      //   // Constructing the URL dynamically with base URL using Django template tags
+      //   var url = window.location.origin + '/operations/operationlog-toggle-approved/' + id + '/'+ isChecked+'/';
 
 
-        fetch(url, {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',  // Optional header for identifying AJAX request
-            'X-CSRFToken': csrftoken
-          },
-          body: {},
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();  // Assuming server returns JSON response
-        })
-        .then(data => {
-          console.log('Success:', data);
-          // Handle success response as needed
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          // Handle error scenario
-        });
-      })
+      //   fetch(url, {
+      //     method: 'POST',
+      //     headers: {
+      //       'X-Requested-With': 'XMLHttpRequest',  // Optional header for identifying AJAX request
+      //       'X-CSRFToken': csrftoken
+      //     },
+      //     body: {},
+      //   })
+      //   .then(response => {
+      //     if (!response.ok) {
+      //       throw new Error('Network response was not ok');
+      //     }
+      //     return response.json();  // Assuming server returns JSON response
+      //   })
+      //   .then(data => {
+      //     console.log('Success:', data);
+      //     // Handle success response as needed
+      //   })
+      //   .catch(error => {
+      //     console.error('Error:', error);
+      //     // Handle error scenario
+      //   });
+      // })
 
       document.getElementById('generatePdfBtn').addEventListener('click', function() {
             // AJAX request to Django view for PDF generation

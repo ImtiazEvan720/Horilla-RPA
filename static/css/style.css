@@ -512,3 +512,7 @@ form label {
 .note-modal-backdrop {
     display: none !important;
 }
+
+.hidden {
+    display: none;
+} 

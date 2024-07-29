@@ -11,6 +11,7 @@ from django_celery_beat.models import PeriodicTask, CrontabSchedule, IntervalSch
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from datetime import time
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -21,6 +22,10 @@ from employee.models import Employee
 from asset.models import Asset
 from horilla.models import HorillaModel
 from horilla.tasks import create_operation_log
+
+def get_current_time():
+    now = timezone.now()
+    return now.time()
 
 class Operation(HorillaModel):
     MAINTENANCE_SCHEDULE = [
@@ -35,6 +40,7 @@ class Operation(HorillaModel):
     name = models.CharField(max_length=100)
     description = models.TextField()
     frequency = models.CharField(choices=MAINTENANCE_SCHEDULE,max_length=100)
+    preferred_time = models.TimeField(verbose_name=_("Preferred Time"),default=get_current_time)
     assigned_to = models.ForeignKey(Employee,on_delete=models.PROTECT,null=True, blank=True)
     related_asset = models.ForeignKey(Asset, on_delete=models.PROTECT,null=True, blank=True)
 
@@ -42,8 +48,7 @@ class Operation(HorillaModel):
     def get_default_operation(cls):
         exam, created = cls.objects.get_or_create(
             name='default operation', 
-            defaults=dict(description='this is not an exam',frequency='OnDemand',
-            related_asset= None),
+            defaults=dict(description='this is not an exam',frequency='OnDemand',preferred_time=get_current_time(),related_asset= None),
         )
         return exam.id
 
@@ -79,23 +84,25 @@ def schedule_operation_logs(sender, instance, **kwargs):
         task='horilla.tasks.create_operation_log',
         args=json.dumps([instance.id]),
         )
-    elif instance.frequency == "Daily":
-        interval_schedule, created = IntervalSchedule.objects.get_or_create(
-            every=1,  # Adjust as per your interval definition
-            defaults={
-                'period': IntervalSchedule.DAYS,  # Assuming DAYS is a constant in your model
-            }
+    elif instance.frequency == "Daily":        
+        crontab_schedule, created = CrontabSchedule.objects.get_or_create(
+            minute=str(instance.preferred_time.minute),
+            hour=str(instance.preferred_time.hour),
+            day_of_week='*',
+            day_of_month='*',
+            month_of_year='*'            
         )
+
         PeriodicTask.objects.update_or_create(
-        interval=interval_schedule,
+        crontab=crontab_schedule,
         name=f'log-operation-{instance.id}',
         task='horilla.tasks.create_operation_log',
         args=json.dumps([instance.id]),
         )
     elif instance.frequency == "Weekly":
         crontab_schedule, created = CrontabSchedule.objects.get_or_create(
-            minute='0',
-            hour='0',
+            minute=str(instance.preferred_time.minute),
+            hour=str(instance.preferred_time.hour),
             day_of_week='1',
             day_of_month='*',
             month_of_year='*'            
@@ -110,8 +117,8 @@ def schedule_operation_logs(sender, instance, **kwargs):
 
     elif instance.frequency == "Monthly":
         crontab_schedule, created = CrontabSchedule.objects.get_or_create(
-            minute='0',
-            hour='0',
+            minute=str(instance.preferred_time.minute),
+            hour=str(instance.preferred_time.hour),
             day_of_week='*',
             day_of_month='1',
             month_of_year='*'            
@@ -126,8 +133,8 @@ def schedule_operation_logs(sender, instance, **kwargs):
 
     elif instance.frequency == "Yearly":
         crontab_schedule, created = CrontabSchedule.objects.get_or_create(
-            minute='0',
-            hour='0',
+            minute=str(instance.preferred_time.minute),
+            hour=str(instance.preferred_time.hour),
             day_of_week='*',
             day_of_month='*',
             month_of_year='1'

@@ -14,7 +14,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
-from django.forms import TextInput,DateTimeInput
+from django.forms import TextInput,DateTimeInput,TimeInput
 from base import thread_local_middleware
 
 # from asset.models import (
@@ -43,6 +43,10 @@ class OperationForm(ModelForm):
         model = Operation
         fields = "__all__"
         exclude = ["is_active"]
+        widgets = {
+            "preferred_time": TimeInput(format='%H:%M'),
+            "frequency": forms.Select(attrs={'id': 'frequency-field'}),            
+        }
 
 class OperationlogForm(ModelForm):
 

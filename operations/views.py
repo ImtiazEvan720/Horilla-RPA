@@ -54,6 +54,8 @@ from horilla.decorators import (
     permission_required,
 )
 from notifications.signals import notify
+from django_celery_beat.models import PeriodicTask
+from django.db import DatabaseError
 
 
 @login_required
@@ -129,6 +131,19 @@ def operation_delete(request, operation_id):
     """
     try:
         operation = Operation.objects.get(id=operation_id)
+        task_name = f'log-operation-{operation_id}'
+    
+        deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
+        deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
+        if deleted_count > 0 or deleted_count_logs > 0:
+            print(f"Successfully deleted {deleted_count} task(s) and {deleted_count_logs} operations with name '{task_name}'.")                        
+        else:
+            print(f"No task found with name '{task_name}'.")                        
+    except Exception as e:
+        # Handle any other unexpected exceptions
+        print(f"An unexpected error occurred: {e}")  
+        messages.error(request, _(f"An unexpected error occurred: {e}"))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
     except Operation.DoesNotExist:
         messages.error(request, _("Operation not found"))
         return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
@@ -210,23 +225,27 @@ def operationlog_update_approval(request,operationlog_id,approved_value):
         elif approved_value == 'false':
             instance.approved = False
         else:
-            return JsonResponse({'error': 'Invalid approved_value'})
+            messages.error(request, _("Invalid Params"))
+            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
 
         # Save the instance
         instance.save()
 
         # Prepare success response
-        response_data = {
-            'status': 'success',
-            'message': 'Operation log updated successfully'
-        }
-        return JsonResponse(response_data)
+        # response_data = {
+        #     'status': 'success',
+        #     'message': 'Operation log updated successfully'
+        # }
+        messages.error(request, _("Log status changed successfully"))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))        
 
-    except OperationLog.DoesNotExist:
-        return JsonResponse({'error': 'Operation log not found'}, status=404)
+    except OperationLog.DoesNotExist:        
+        messages.error(request, _("Operation log not found"))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
 
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    except Exception as e:        
+        messages.error(request, _(str(e)))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
     
 
 @login_required 
@@ -415,3 +434,21 @@ def generate_pdf(request):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = 'filename="sample.pdf"'
     return response
+
+# @login_required
+# def clear_operation_logs(operation_id):
+
+#     task_name = f'log-operation-{operation_id}'
+#     try :
+#         deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
+#         deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
+#         if deleted_count > 0 or deleted_count_logs > 0:
+#             print(f"Successfully deleted {deleted_count} task(s) with name '{task_name}'.")                        
+#         else:
+#             print(f"No task found with name '{task_name}'.")                    
+#     except DatabaseError as e:
+#         # Handle any database errors that occur
+#         print(f"An error occurred while deleting the periodic task: {e}")        
+#     except Exception as e:
+#         # Handle any other unexpected exceptions
+#         print(f"An unexpected error occurred: {e}")        
