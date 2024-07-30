@@ -61,6 +61,15 @@ else
     install_docker_compose
 fi
 
+# Ensure Docker service is started
+echo "Ensuring Docker service is running..."
+if sudo systemctl is-active --quiet docker; then
+    echo "Docker service is already running."
+else
+    echo "Docker service is not running. Starting Docker service..."
+    sudo systemctl start docker
+fi
+
 # Start up the Docker containers
 echo "Starting up Docker containers with docker-compose..."
 docker-compose up -d
