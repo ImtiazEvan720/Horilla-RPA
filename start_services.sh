@@ -45,6 +45,16 @@ install_docker_compose() {
     docker-compose --version
 }
 
+# Function to wait for Docker service to be ready
+wait_for_docker() {
+    echo "Waiting for Docker daemon to be ready..."
+    while ! sudo docker info > /dev/null 2>&1; do
+        echo "Docker daemon is not ready yet. Waiting..."
+        sleep 1
+    done
+    echo "Docker daemon is ready."
+}
+
 # Check if Docker is installed
 if command -v docker > /dev/null 2>&1; then
     echo "Docker is already installed. Skipping Docker installation."
@@ -61,14 +71,47 @@ else
     install_docker_compose
 fi
 
-# Ensure Docker service is started
-echo "Ensuring Docker service is running..."
-if sudo systemctl is-active --quiet docker; then
-    echo "Docker service is already running."
-else
-    echo "Docker service is not running. Starting Docker service..."
+
+# Function to start Docker on Linux
+start_docker_linux() {
+    echo "Starting Docker on Linux..."
     sudo systemctl start docker
-fi
+    if systemctl is-active --quiet docker; then
+        echo "Docker is running."
+    else
+        echo "Docker failed to start."
+    fi
+}
+
+# Function to start Docker on macOS
+start_docker_macos() {
+    echo "Starting Docker on macOS..."
+    # Open Docker Desktop if not running
+    open -a Docker
+    # Check if Docker is running
+    if pgrep -x "Docker" > /dev/null; then
+        echo "Docker is running."
+    else
+        echo "Docker failed to start."
+    fi
+}
+
+# Detect the operating system and start Docker
+case "$(uname -s)" in
+    Linux)
+        start_docker_linux
+        ;;
+    Darwin)
+        start_docker_macos
+        ;;
+    *)
+        echo "Unsupported OS."
+        exit 1
+        ;;
+esac
+
+# Wait for Docker to be fully ready
+wait_for_docker
 
 # Start up the Docker containers
 echo "Starting up Docker containers with docker-compose..."
