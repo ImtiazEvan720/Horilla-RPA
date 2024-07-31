@@ -7,10 +7,7 @@ Horilla is a Free and Open Source HRMS Software.
 
 ## **Deploy Docker**
 ____
-The project can be started by executing start_services.sh, it will start the necessary docker containers and the webserver will listen for
-
-incoming requests on localhost/127.0.0.1 of the machine. In case docker services are not installed on the device it will automatically install the 
-
+The project can be started by executing start_services.sh, it will start the necessary docker containers and the webserver will listen for incoming requests on localhost/127.0.0.1 of the machine. In case docker services are not installed on the device it will automatically install the 
 necessary services. To stop the docker containers use script stop_services.sh.
 
 It's important to mention that on some Ubuntu machines, deploying the project may require elevated permissions. For these cases, you might need to 
