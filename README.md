@@ -5,7 +5,7 @@ Horilla is a Free and Open Source HRMS Software.
 <img width="1470" alt="Screenshot 2024-03-15 at 3 05 20 PM" src="https://github.com/horilla-opensource/horilla/assets/131998600/1317bd0a-03a8-40be-8fb2-ecb655bb5c13">
 
 
-## **Installation**
+## **Deploy Docker**
 ____
 The project can be started by executing start_services.sh, it will start the necessary docker containers and the webserver will listen for incoming requests on localhost/127.0.0.0 of 
 
