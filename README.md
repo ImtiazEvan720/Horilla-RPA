@@ -13,6 +13,9 @@ incoming requests on localhost/127.0.0.1 of the machine. In case docker services
 
 necessary services. To stop the docker containers use script stop_services.sh.
 
+It's important to mention that on some Ubuntu machines, deploying the project may require elevated permissions. For these cases, you might need to 
+
+use sudo to execute certain commands.
 
 
 ## **Installation**
