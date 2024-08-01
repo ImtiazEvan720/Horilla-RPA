@@ -1,26 +1,17 @@
 # Function to install Docker
 function Install-Docker {
     Write-Output "Downloading Docker Desktop for Windows..."
-    $dockerUrl = "https://desktop.docker.com/win/stable/Docker%20Desktop%20Installer.exe"
+    $dockerUrl = "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
     $dockerInstaller = "$env:TEMP\DockerDesktopInstaller.exe"
     
-    Invoke-WebRequest -Uri $dockerUrl -OutFile $dockerInstaller
+    # Use System.Net.WebClient for faster downloads
+    $webClient = New-Object System.Net.WebClient
+    $webClient.DownloadFile($dockerUrl, $dockerInstaller)
     
     Write-Output "Installing Docker Desktop..."
-    Start-Process -FilePath $dockerInstaller -ArgumentList @("/silent") -Wait
+    Start-Process -FilePath $dockerInstaller -Wait
     
     Write-Output "Docker Desktop installation completed."
-}
-
-# Function to install Docker Compose
-function Install-DockerCompose {
-    Write-Output "Downloading Docker Compose..."
-    $composeUrl = "https://github.com/docker/compose/releases/download/v2.16.0/docker-compose-Windows-x86_64.exe"
-    $composePath = "$env:ProgramFiles\Docker\Docker\resources\bin\docker-compose.exe"
-
-    Invoke-WebRequest -Uri $composeUrl -OutFile $composePath
-    
-    Write-Output "Docker Compose installation completed."
 }
 
 # Function to wait for Docker service to be ready
@@ -30,7 +21,7 @@ function Wait-ForDocker {
         Start-Sleep -Seconds 1
     }
     
-    while ((docker info | Out-Null) -ne $null) {
+    while (-not (docker info | Out-Null -ErrorAction SilentlyContinue)) {
         Start-Sleep -Seconds 1
     }
     
@@ -40,10 +31,11 @@ function Wait-ForDocker {
 # Function to start Docker service
 function Start-Docker {
     Write-Output "Starting Docker Desktop..."
-    Start-Process -FilePath "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe" -ArgumentList @() -Wait
+    # Start Docker Desktop executable without arguments
+    Start-Process -FilePath "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe" -Wait
     
     # Check if Docker service is running
-    if (Get-Service -Name "com.docker.service" | Select-Object -ExpandProperty Status -eq "Running") {
+    if ((Get-Service -Name "com.docker.service" -ErrorAction SilentlyContinue).Status -eq "Running") {
         Write-Output "Docker service is running."
     } else {
         Write-Output "Docker service failed to start."
@@ -54,16 +46,8 @@ function Start-Docker {
 if (Get-Command docker -ErrorAction SilentlyContinue) {
     Write-Output "Docker is already installed. Skipping Docker installation."
 } else {
-    Write-Output "Installing Docker..."
+    Write-Output "Docker is not installed. Installing Docker..."
     Install-Docker
-}
-
-# Check if Docker Compose is installed
-if (Test-Path "$env:ProgramFiles\Docker\Docker\resources\bin\docker-compose.exe") {
-    Write-Output "Docker Compose is already installed. Skipping Docker Compose installation."
-} else {
-    Write-Output "Installing Docker Compose..."
-    Install-DockerCompose
 }
 
 # Start Docker service
@@ -72,8 +56,19 @@ Start-Docker
 # Wait for Docker to be fully ready
 Wait-ForDocker
 
+# Determine the directory of the current script
+$scriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
+
+# Ensure docker-compose is present in the same directory as the script
+$dockerComposePath = Join-Path -Path $scriptDir -ChildPath "docker-compose.yml"
+
+if (-Not (Test-Path -Path $dockerComposePath)) {
+    Write-Output "docker-compose.yml not found in the script directory."
+    exit 1
+}
+
 # Start Docker containers using docker-compose
 Write-Output "Starting up Docker containers with docker-compose..."
-& "$env:ProgramFiles\Docker\Docker\resources\bin\docker-compose.exe" up -d
+& "docker-compose" -f $dockerComposePath up -d
 
 Write-Output "Setup completed successfully!"
