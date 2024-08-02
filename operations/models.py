@@ -61,6 +61,21 @@ def start_scheduler():
         logger.debug("Scheduler is already running.")
 
 
+def get_jobs_with_prefix(prefix):
+    jobs = scheduler.get_jobs()
+
+    # Initialize an empty list to store the filtered jobs
+    filtered_jobs = []
+
+    # Loop through all jobs
+    for job in jobs:
+        # Check if the job's ID starts with the specified prefix
+        if job.id.startswith(prefix):
+            # Add the job to the filtered list
+            filtered_jobs.append(job)
+
+    return filtered_jobs
+
 def add_job(job_func, trigger, args, job_id, replace_existing=True):
     scheduler.add_job(
         job_func,
@@ -80,7 +95,10 @@ def schedule_operation_tasks():
 
     operations = Operation.objects.all()
     for operation in operations:
-        job_id = f'log-operation-{operation.id}'
+        prefix = f'log-operation-{operation.id}'
+        count = len(get_jobs_with_prefix(prefix))
+
+        job_id = f'log-operation-{operation.id}-{count}'
 
         trigger = None
         if operation.frequency == "Once":
@@ -172,7 +190,12 @@ def schedule_operation_logs(sender, instance, **kwargs):
     operation = instance
 
     scheduler = BackgroundScheduler()    
-    job_id = f'log-operation-{operation.id}'
+
+    prefix = f'log-operation-{operation.id}'
+    count = len(get_jobs_with_prefix(prefix))
+
+    job_id = f'log-operation-{operation.id}-{count}'
+    # job_id = f'log-operation-{operation.id}'
 
     if operation.frequency == "Once":
         scheduler.add_job(

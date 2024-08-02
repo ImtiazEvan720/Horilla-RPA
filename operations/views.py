@@ -27,7 +27,8 @@ from operations.filters import(
 
 from operations.models import(
     Operation,
-    OperationLog
+    OperationLog,
+    get_jobs_with_prefix
 )
 
 from operations.forms import(
@@ -55,6 +56,7 @@ from horilla.decorators import (
 )
 from notifications.signals import notify
 from django.db import DatabaseError
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 @login_required
@@ -131,7 +133,12 @@ def operation_delete(request, operation_id):
     try:
         operation = Operation.objects.get(id=operation_id)
         task_name = f'log-operation-{operation_id}'
+
+        jobs_to_delete = get_jobs_with_prefix(task_name)
     
+        # Delete each jobs
+        for job in jobs_to_delete:
+            scheduler.remove_job(job.id)
         # deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
         deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
         if deleted_count > 0 or deleted_count_logs > 0:
