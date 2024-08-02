@@ -8,23 +8,60 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            background-color: #f4f4f4;
         }
         h1 {
             color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #d0d0d0; /* Grey border */
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff; /* Blue background for headers */
+            color: #ffffff; /* White text */
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9; /* Light grey for even rows */
+        }
+        tr:hover {
+            background-color: #e9ecef; /* Slightly darker grey for hover */
         }
     </style>
 </head>
 <body>
     <h1>{{title}}</h1>
     <p>{{content}}</p>
-    {% for log in operation_logs|slice:":20" %}
-        <div class="operation-log">
-            <h2>{{ log.operation.name }}</h2>
-            <p><strong>Performed By:</strong> {{ log.performed_by }}</p>
-            <p><strong>Date:</strong> {{ log.date }}</p>
-            <p><strong>Notes:</strong> {{ log.notes }}</p>
-            <p><strong>Approved:</strong> {{ log.approved }}</p>
-        </div>
-    {% endfor %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Performed By</th>
+                <th>Date</th>
+                <th>Notes</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in operation_logs|slice:":20" %}
+                <tr>
+                    <td>{{ log.operation.name }}</td>
+                    <td>{{ log.performed_by }}</td>
+                    <td>{{ log.date }}</td>
+                    <td>{{ log.notes }}</td>
+                    <td>{{ log.approved }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 </html>

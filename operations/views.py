@@ -310,8 +310,13 @@ def operationlog_list(request):
         # Filter OperationLog objects where performed_by is the current request user's employee instance
         operationLogs = OperationLog.objects.filter(performed_by=request.user.employee_get)
 
+    paginator = Paginator(operationLogs, 10)  # Show 10 items per page
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "operationlogs": operationLogs,
+        "operationlogs": page_obj,
         # "operationLogs":operationLogs,
     }
     return render(request, "operations/operationlog_list.html", context)

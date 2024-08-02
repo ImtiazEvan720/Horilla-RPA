@@ -339,114 +339,121 @@ def home(request):
     """
     This method is used to render index page
     """
-    if len(EmployeeShiftDay.objects.all()) == 0:
-        days = (
-            ("monday", "Monday"),
-            ("tuesday", "Tuesday"),
-            ("wednesday", "Wednesday"),
-            ("thursday", "Thursday"),
-            ("friday", "Friday"),
-            ("saturday", "Saturday"),
-            ("sunday", "Sunday"),
-        )
-        for day in days:
-            shift_day = EmployeeShiftDay()
-            shift_day.day = day[0]
-            shift_day.save()
 
-    today = datetime.today()
-    today_weekday = today.weekday()
-    first_day_of_week = today - timedelta(days=today_weekday)
-    last_day_of_week = first_day_of_week + timedelta(days=6)
+    user = request.user  # Assuming 'request' is available in your view
+    if user.is_superuser:  # Example permission check
 
-    employees_with_pending = []
-    employee_charts = DashboardEmployeeCharts.objects.get_or_create(
-        employee=request.user.employee_get
-    )[0]
+        if len(EmployeeShiftDay.objects.all()) == 0:
+            days = (
+                ("monday", "Monday"),
+                ("tuesday", "Tuesday"),
+                ("wednesday", "Wednesday"),
+                ("thursday", "Thursday"),
+                ("friday", "Friday"),
+                ("saturday", "Saturday"),
+                ("sunday", "Sunday"),
+            )
+            for day in days:
+                shift_day = EmployeeShiftDay()
+                shift_day.day = day[0]
+                shift_day.save()
 
-    # List of field names to focus on
-    fields_to_focus = [
-        "job_position_id",
-        "department_id",
-        "work_type_id",
-        "employee_type_id",
-        "job_role_id",
-        "reporting_manager_id",
-        "company_id",
-        "location",
-        "email",
-        "mobile",
-        "shift_id",
-        "date_joining",
-        "contract_end_date",
-        "basic_salary",
-        "salary_hour",
-    ]
+        today = datetime.today()
+        today_weekday = today.weekday()
+        first_day_of_week = today - timedelta(days=today_weekday)
+        last_day_of_week = first_day_of_week + timedelta(days=6)
 
-    for employee in EmployeeWorkInformation.objects.filter(employee_id__is_active=True):
-        completed_field_count = sum(
-            1
-            for field_name in fields_to_focus
-            if getattr(employee, field_name) is not None
-        )
-        if completed_field_count < 14:
-            # Create a dictionary with employee information and pending field count
-            percent = f"{((completed_field_count / 14) * 100):.1f}"
-            employee_info = {
-                "employee": employee,
-                "completed_field_count": percent,
-            }
-            employees_with_pending.append(employee_info)
-        else:
-            pass
+        employees_with_pending = []
+        employee_charts = DashboardEmployeeCharts.objects.get_or_create(
+            employee=request.user.employee_get
+        )[0]
 
-    emps = Employee.objects.filter(employee_work_info__isnull=True)
-    for emp in emps:
-        employees_with_pending.insert(
-            0,
-            {
-                "employee": Workinfo(employee=emp),
-                "completed_field_count": "0",
-            },
-        )
-    announcements = Announcement.objects.all()
-    general_expire = AnnouncementExpire.objects.all().first()
-    general_expire_date = 30 if not general_expire else general_expire.days
+        # List of field names to focus on
+        fields_to_focus = [
+            "job_position_id",
+            "department_id",
+            "work_type_id",
+            "employee_type_id",
+            "job_role_id",
+            "reporting_manager_id",
+            "company_id",
+            "location",
+            "email",
+            "mobile",
+            "shift_id",
+            "date_joining",
+            "contract_end_date",
+            "basic_salary",
+            "salary_hour",
+        ]
 
-    for announcement in announcements.filter(expire_date__isnull=True):
-        calculated_expire_date = announcement.created_at + timedelta(
-            days=general_expire_date
-        )
-        announcement.expire_date = calculated_expire_date
-        announcement.save()
+        for employee in EmployeeWorkInformation.objects.filter(employee_id__is_active=True):
+            completed_field_count = sum(
+                1
+                for field_name in fields_to_focus
+                if getattr(employee, field_name) is not None
+            )
+            if completed_field_count < 14:
+                # Create a dictionary with employee information and pending field count
+                percent = f"{((completed_field_count / 14) * 100):.1f}"
+                employee_info = {
+                    "employee": employee,
+                    "completed_field_count": percent,
+                }
+                employees_with_pending.append(employee_info)
+            else:
+                pass
 
-        # Check if the user has viewed the announcement
-        announcement_view = AnnouncementView.objects.filter(
-            announcement=announcement, user=request.user
-        ).first()
-        announcement.has_viewed = (
-            announcement_view is not None and announcement_view.viewed
-        )
+        emps = Employee.objects.filter(employee_work_info__isnull=True)
+        for emp in emps:
+            employees_with_pending.insert(
+                0,
+                {
+                    "employee": Workinfo(employee=emp),
+                    "completed_field_count": "0",
+                },
+            )
+        announcements = Announcement.objects.all()
+        general_expire = AnnouncementExpire.objects.all().first()
+        general_expire_date = 30 if not general_expire else general_expire.days
 
-    announcements = announcements.exclude(
-        expire_date__lt=datetime.today().date()
-    ).order_by("-created_at")
+        for announcement in announcements.filter(expire_date__isnull=True):
+            calculated_expire_date = announcement.created_at + timedelta(
+                days=general_expire_date
+            )
+            announcement.expire_date = calculated_expire_date
+            announcement.save()
 
-    announcement_list = announcements.filter(employees=request.user.employee_get)
-    announcement_list = announcement_list | announcements.filter(employees__isnull=True)
-    if request.user.has_perm("base.view_announcement"):
-        announcement_list = announcements
+            # Check if the user has viewed the announcement
+            announcement_view = AnnouncementView.objects.filter(
+                announcement=announcement, user=request.user
+            ).first()
+            announcement.has_viewed = (
+                announcement_view is not None and announcement_view.viewed
+            )
 
-    context = {
-        "first_day_of_week": first_day_of_week.strftime("%Y-%m-%d"),
-        "last_day_of_week": last_day_of_week.strftime("%Y-%m-%d"),
-        "employees_with_pending": employees_with_pending,
-        "announcement": announcement_list,
-        "general_expire_date": general_expire_date,
-        "charts": employee_charts.charts,
-    }
+        announcements = announcements.exclude(
+            expire_date__lt=datetime.today().date()
+        ).order_by("-created_at")
 
-    return render(request, "index.html", context)
+        announcement_list = announcements.filter(employees=request.user.employee_get)
+        announcement_list = announcement_list | announcements.filter(employees__isnull=True)
+        if request.user.has_perm("base.view_announcement"):
+            announcement_list = announcements
+
+        context = {
+            "first_day_of_week": first_day_of_week.strftime("%Y-%m-%d"),
+            "last_day_of_week": last_day_of_week.strftime("%Y-%m-%d"),
+            "employees_with_pending": employees_with_pending,
+            "announcement": announcement_list,
+            "general_expire_date": general_expire_date,
+            "charts": employee_charts.charts,
+            'is_superuser': request.user.is_superuser
+        }
+
+        return render(request, "index.html", context)
+    else:
+        return redirect('operationlog-list')                                 
 
 
 @login_required

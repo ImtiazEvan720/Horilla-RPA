@@ -37,6 +37,6 @@ gunicorn --bind 0.0.0.0:80 horilla.wsgi:application &
 
 # Start the Celery worker
 echo "Starting the Celery worker..."
-celery -A $DJANGO_APP worker --loglevel=info &
-celery -A $DJANGO_APP beat --loglevel=debug
+celery -A $DJANGO_APP worker &
+celery -A $DJANGO_APP beat
 

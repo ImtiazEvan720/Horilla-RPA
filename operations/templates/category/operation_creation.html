@@ -56,7 +56,7 @@
                 {{operation_form.frequency.errors}}
             </div>
             <div class="oh-input__group " id="preferred-time-field">
-                <label class="oh-input__label" for="{{operation_form.preferred_time.id_for_label}}">{% trans "Preferred Time" %}</label>
+                <label class="timepicker" for="{{operation_form.preferred_time.id_for_label}}">{% trans "Preferred Time" %}</label>
                 {{operation_form.preferred_time}}
                 {{operation_form.preferred_time.errors}}
             </div>
@@ -94,4 +94,14 @@
             $('#preferred-time-field').addClass('hidden');   
         }
     });
+    
+    // Initialize the timepicker
+    $('#timepicker').timepicker({
+        timeFormat: 'HH:mm',
+        interval: 15,                
+        dynamic: false,
+        dropdown: true,
+        scrollbar: true     
+    });
+    
 </script>

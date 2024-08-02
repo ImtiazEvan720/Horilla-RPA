@@ -71,7 +71,8 @@ INSTALLED_APPS = [
     "payroll",
     "widget_tweaks",
     "django_apscheduler",
-    "operations"
+    "operations",
+    "django_flatpickr",
 ]
 APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
 

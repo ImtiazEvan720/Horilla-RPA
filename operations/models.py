@@ -40,7 +40,7 @@ class Operation(HorillaModel):
     name = models.CharField(max_length=100)
     description = models.TextField()
     frequency = models.CharField(choices=MAINTENANCE_SCHEDULE,max_length=100)
-    preferred_time = models.TimeField(verbose_name=_("Preferred Time"),default=get_current_time)
+    preferred_time = models.TimeField(verbose_name=_("Preferred Time"),default=time(0,0))
     assigned_to = models.ForeignKey(Employee,on_delete=models.PROTECT,null=True, blank=True)
     related_asset = models.ForeignKey(Asset, on_delete=models.PROTECT,null=True, blank=True)
 

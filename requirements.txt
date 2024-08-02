@@ -70,3 +70,4 @@ django-celery-results
 weasyprint
 django-redis
 SQLAlchemy
+django-flatpickr

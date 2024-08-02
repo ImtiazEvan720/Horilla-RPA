@@ -16,6 +16,8 @@ from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from django.forms import TextInput,DateTimeInput,TimeInput
 from base import thread_local_middleware
+from django_flatpickr.widgets import DatePickerInput, TimePickerInput, DateTimePickerInput 
+
 
 # from asset.models import (
 #     Asset,
@@ -44,7 +46,7 @@ class OperationForm(ModelForm):
         fields = "__all__"
         exclude = ["is_active"]
         widgets = {
-            "preferred_time": TimeInput(format='%H:%M'),
+            "preferred_time": TimeInput(attrs={'id':'timepicker','placeholder':'Select time'},format="%H:%M"),
             "frequency": forms.Select(attrs={'id': 'frequency-field'}),            
         }
 
