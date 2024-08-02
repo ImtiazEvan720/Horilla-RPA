@@ -11,6 +11,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'horilla.settings')
 app = Celery('horilla')  # Replace 'your_project' with your project's name.
 app.conf.enable_utc = False
 
+app.conf.update(
+    worker_prefetch_multiplier=1,  # Set prefetch multiplier to 1
+    worker_max_tasks_per_child=50
+)
+
 # Configure Celery using settings from Django settings.py.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
