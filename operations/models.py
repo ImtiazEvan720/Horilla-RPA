@@ -88,14 +88,13 @@ def schedule_operation_tasks():
         elif operation.frequency == 'EveryOtherMin':
             trigger = IntervalTrigger(minutes=2)
         elif operation.frequency == "Daily":
-            # trigger = CronTrigger(
-            #     minute=operation.preferred_time.minute,
-            #     hour=operation.preferred_time.hour,
-            #     day_of_week='*',
-            #     day='*',
-            #     month='*'
-            # )
-            trigger = IntervalTrigger(minutes=3)
+            trigger = CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day='*',
+                month='*'
+            )            
         elif operation.frequency == "Weekly":
             trigger = CronTrigger(
                 minute=operation.preferred_time.minute,
