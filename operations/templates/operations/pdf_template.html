@@ -53,7 +53,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for log in operation_logs|slice:":20" %}
+            {% for log in operation_logs %}
                 <tr>
                     <td>{{ forloop.counter }}</td> 
                     <td>{{ log.operation.name }}</td>
