@@ -27,8 +27,7 @@ from operations.filters import(
 
 from operations.models import(
     Operation,
-    OperationLog,
-    get_jobs_with_prefix
+    OperationLog,    
 )
 
 from operations.forms import(
@@ -134,11 +133,7 @@ def operation_delete(request, operation_id):
         operation = Operation.objects.get(id=operation_id)
         task_name = f'log-operation-{operation_id}'
 
-        jobs_to_delete = get_jobs_with_prefix(task_name)
-    
-        # Delete each jobs
-        for job in jobs_to_delete:
-            scheduler.remove_job(job.id)
+        scheduler.remove_job(task_name)
         # deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
         deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
         if deleted_count > 0 or deleted_count_logs > 0:
