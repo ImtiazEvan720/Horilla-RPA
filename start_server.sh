@@ -5,8 +5,8 @@ DJANGO_SETTINGS_MODULE="myproject.settings"
 DJANGO_APP="horilla"
 
 # Define memory limit and concurrency
-MEMORY_LIMIT_KB=100000  # Memory limit in kilobytes (200 MB)
-CONCURRENCY=2           # Number of worker processes
+MEMORY_LIMIT_KB=200000  # Memory limit in kilobytes (200 MB)
+CONCURRENCY=1           # Number of worker processes
 
 # Navigate to the project directory (assuming the script is run from the root)
 cd "$(dirname "$0")" || exit
