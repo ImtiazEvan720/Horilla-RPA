@@ -132,7 +132,8 @@ def operation_delete(request, operation_id):
     try:
         operation = Operation.objects.get(id=operation_id)
         task_name = f'log-operation-{operation_id}'
-
+        
+        scheduler = BackgroundScheduler()
         scheduler.remove_job(task_name)
         # deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
         deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
