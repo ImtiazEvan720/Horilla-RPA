@@ -28,6 +28,7 @@ from operations.filters import(
 from operations.models import(
     Operation,
     OperationLog,    
+    scheduler
 )
 
 from operations.forms import(
@@ -132,12 +133,11 @@ def operation_delete(request, operation_id):
     try:
         operation = Operation.objects.get(id=operation_id)
         task_name = f'log-operation-{operation_id}'
-        
-        scheduler = BackgroundScheduler()
+
         scheduler.remove_job(task_name)
         # deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
         deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
-        if deleted_count > 0 or deleted_count_logs > 0:
+        if deleted_count_logs > 0 :
             print(f"Successfully deleted {deleted_count_logs} operations with name '{task_name}'.")                        
         else:
             print(f"No task found with name '{task_name}'.")                        

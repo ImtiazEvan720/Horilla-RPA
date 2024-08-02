@@ -169,91 +169,91 @@ class OperationLog(HorillaModel):
 @receiver(post_save, sender=Operation)
 def schedule_operation_logs(sender, instance, **kwargs):
 
-    operation = instance
-
-    scheduler = BackgroundScheduler()    
+    operation = instance     
     job_id = f'log-operation-{operation.id}'
+    try:
+        if operation.frequency == "Once":
+            scheduler.add_job(
+                schedule_operation_log,
+                DateTrigger(run_date=timezone.now()),
+                args=[operation.id],
+                id=job_id,
+                replace_existing=True
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-    if operation.frequency == "Once":
-        scheduler.add_job(
-            schedule_operation_log,
-            DateTrigger(run_date=timezone.now()),
-            args=[operation.id],
-            id=job_id,
-            replace_existing=True
-        )
-        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
+        elif operation.frequency == 'EveryOtherMin':
+            scheduler.add_job(
+                schedule_operation_log,
+                IntervalTrigger(minutes=2),
+                args=[operation.id],
+                id=job_id,
+                replace_existing=True
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-    elif operation.frequency == 'EveryOtherMin':
-        scheduler.add_job(
-            schedule_operation_log,
-            IntervalTrigger(minutes=2),
-            args=[operation.id],
-            id=job_id,
-            replace_existing=True
-        )
-        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
+        elif operation.frequency == "Daily":
+            scheduler.add_job(
+                schedule_operation_log,
+                CronTrigger(
+                    minute=operation.preferred_time.minute,
+                    hour=operation.preferred_time.hour,
+                    day_of_week='*',
+                    day='*',
+                    month='*'
+                ),
+                args=[operation.id],
+                id=job_id,
+                replace_existing=True
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-    elif operation.frequency == "Daily":
-        scheduler.add_job(
-            schedule_operation_log,
-            CronTrigger(
-                minute=operation.preferred_time.minute,
-                hour=operation.preferred_time.hour,
-                day_of_week='*',
-                day='*',
-                month='*'
-            ),
-            args=[operation.id],
-            id=job_id,
-            replace_existing=True
-        )
-        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
+        elif operation.frequency == "Weekly":
+            scheduler.add_job(
+                schedule_operation_log,
+                CronTrigger(
+                    minute=operation.preferred_time.minute,
+                    hour=operation.preferred_time.hour,
+                    day_of_week='1',
+                    day='*',
+                    month='*'
+                ),
+                args=[operation.id],
+                id=job_id,
+                replace_existing=True
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-    elif operation.frequency == "Weekly":
-        scheduler.add_job(
-            schedule_operation_log,
-            CronTrigger(
-                minute=operation.preferred_time.minute,
-                hour=operation.preferred_time.hour,
-                day_of_week='1',
-                day='*',
-                month='*'
-            ),
-            args=[operation.id],
-            id=job_id,
-            replace_existing=True
-        )
-        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
+        elif operation.frequency == "Monthly":
+            scheduler.add_job(
+                schedule_operation_log,
+                CronTrigger(
+                    minute=operation.preferred_time.minute,
+                    hour=operation.preferred_time.hour,
+                    day_of_week='*',
+                    day='1',
+                    month='*'
+                ),
+                args=[operation.id],
+                id=job_id,
+                replace_existing=True
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-    elif operation.frequency == "Monthly":
-        scheduler.add_job(
-            schedule_operation_log,
-            CronTrigger(
-                minute=operation.preferred_time.minute,
-                hour=operation.preferred_time.hour,
-                day_of_week='*',
-                day='1',
-                month='*'
-            ),
-            args=[operation.id],
-            id=job_id,
-            replace_existing=True
-        )
-        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
-
-    elif operation.frequency == "Yearly":
-        scheduler.add_job(
-            schedule_operation_log,
-            CronTrigger(
-                minute=operation.preferred_time.minute,
-                hour=operation.preferred_time.hour,
-                day_of_week='*',
-                day='1',
-                month='1'
-            ),
-            args=[operation.id],
-            id=job_id,
-            replace_existing=True
-        )
-        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
+        elif operation.frequency == "Yearly":
+            scheduler.add_job(
+                schedule_operation_log,
+                CronTrigger(
+                    minute=operation.preferred_time.minute,
+                    hour=operation.preferred_time.hour,
+                    day_of_week='*',
+                    day='1',
+                    month='1'
+                ),
+                args=[operation.id],
+                id=job_id,
+                replace_existing=True
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
+    except Exception as e:
+                logger.error(f"Failed to add job {job_id}: {e}")
