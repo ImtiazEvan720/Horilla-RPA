@@ -1,8 +1,6 @@
-from celery import shared_task
 from django.utils import timezone
 from django.apps import apps
 
-@shared_task
 def create_operation_log(operation_id):
     try:
         

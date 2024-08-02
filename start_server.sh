@@ -37,10 +37,10 @@ fi
 
 # Start the Gunicorn server
 echo "Starting the Gunicorn server..."
-gunicorn --bind 0.0.0.0:80 horilla.wsgi:application &
+gunicorn --bind 0.0.0.0:80 horilla.wsgi:application
 
 # Start the Celery worker
-echo "Starting the Celery worker..."
-celery -A $DJANGO_APP worker --loglevel=info --max-memory-per-child=$MEMORY_LIMIT_KB --concurrency=$CONCURRENCY &
-celery -A $DJANGO_APP beat
+# echo "Starting the Celery worker..."
+# celery -A $DJANGO_APP worker --loglevel=info --max-memory-per-child=$MEMORY_LIMIT_KB --concurrency=$CONCURRENCY &
+# celery -A $DJANGO_APP beat
 

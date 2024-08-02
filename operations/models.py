@@ -4,10 +4,8 @@ Models for Asset Management System
 This module defines Django models to manage assets, their categories, assigning, and requests
 within an Asset Management System.
 """
-from celery import shared_task
 import json
-from django_celery_beat.models import PeriodicTask, CrontabSchedule, IntervalSchedule
-
+import os
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -23,9 +21,112 @@ from asset.models import Asset
 from horilla.models import HorillaModel
 from horilla.tasks import create_operation_log
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+import logging
+
+logger = logging.getLogger("apscheduler")
+
 def get_current_time():
     now = timezone.now()
     return now.time()
+
+# Get the current directory of the script
+current_directory = os.path.dirname(__file__)
+
+# Move up one directory
+parent_directory = os.path.dirname(current_directory)
+
+# Configure APScheduler to use the existing TestDB_Horilla.sqlite3 for job storage
+database_path = os.path.join(parent_directory, 'TestDB_Horilla.sqlite3')
+jobstores = {
+    'default': SQLAlchemyJobStore(url=f'sqlite:///{database_path}')
+}
+
+scheduler = BackgroundScheduler(jobstores=jobstores)
+logger.debug(f"database path {database_path}")
+
+def start_scheduler():
+    # Set up the scheduler with the SQLite job store    
+    if not scheduler.running:
+        try:
+            scheduler.start()
+            logger.debug("Scheduler started successfully.")
+        except Exception as e:
+            logger.debug(f"Error starting scheduler: {e}")
+    else:
+        logger.debug("Scheduler is already running.")
+
+
+def add_job(job_func, trigger, args, job_id, replace_existing=True):
+    scheduler.add_job(
+        job_func,
+        trigger,
+        args=args,
+        id=job_id,
+        replace_existing=replace_existing
+    )
+    logger.info(f"Added job {job_id} to scheduler.")
+
+# Define the job function
+def schedule_operation_log(operation_id):
+    create_operation_log(operation_id)
+
+def schedule_operation_tasks():
+    from .models import Operation,add_job
+
+    operations = Operation.objects.all()
+    for operation in operations:
+        job_id = f'log-operation-{operation.id}'
+
+        trigger = None
+        if operation.frequency == "Once":
+            trigger = DateTrigger(run_date=timezone.now())
+        elif operation.frequency == 'EveryOtherMin':
+            trigger = IntervalTrigger(minutes=2)
+        elif operation.frequency == "Daily":
+            # trigger = CronTrigger(
+            #     minute=operation.preferred_time.minute,
+            #     hour=operation.preferred_time.hour,
+            #     day_of_week='*',
+            #     day='*',
+            #     month='*'
+            # )
+            trigger = IntervalTrigger(minutes=3)
+        elif operation.frequency == "Weekly":
+            trigger = CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='1',
+                day='*',
+                month='*'
+            )
+        elif operation.frequency == "Monthly":
+            trigger = CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day='1',
+                month='*'
+            )
+        elif operation.frequency == "Yearly":
+            trigger = CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day='1',
+                month='1'
+            )
+
+        if trigger:
+            try:
+                add_job(schedule_operation_log, trigger, [operation.id], job_id)
+            except Exception as e:
+                logger.error(f"Failed to add job {job_id}: {e}")
+
 
 class Operation(HorillaModel):
     MAINTENANCE_SCHEDULE = [
@@ -65,84 +166,95 @@ class OperationLog(HorillaModel):
     def __str__(self):
         return f"{self.operation.name} - {self.id}"
 
+
 @receiver(post_save, sender=Operation)
 def schedule_operation_logs(sender, instance, **kwargs):
 
-    if instance.frequency == "Once":
-        create_operation_log.apply_async((instance.id,), countdown=0)    
-    elif instance.frequency == 'EveryOtherMin':
-        interval_schedule, created = IntervalSchedule.objects.get_or_create(
-            every=2,  # Adjust as per your interval definition
-            defaults={
-                'period': IntervalSchedule.MINUTES,  # Assuming DAYS is a constant in your model
-            }
-        )
+    operation = instance
 
-        PeriodicTask.objects.update_or_create(
-        interval=interval_schedule,
-        name=f'log-operation-{instance.id}',
-        task='horilla.tasks.create_operation_log',
-        args=json.dumps([instance.id]),
-        )
-    elif instance.frequency == "Daily":        
-        crontab_schedule, created = CrontabSchedule.objects.get_or_create(
-            minute=str(instance.preferred_time.minute),
-            hour=str(instance.preferred_time.hour),
-            day_of_week='*',
-            day_of_month='*',
-            month_of_year='*'            
-        )
+    scheduler = BackgroundScheduler()    
+    job_id = f'log-operation-{operation.id}'
 
-        PeriodicTask.objects.update_or_create(
-        crontab=crontab_schedule,
-        name=f'log-operation-{instance.id}',
-        task='horilla.tasks.create_operation_log',
-        args=json.dumps([instance.id]),
+    if operation.frequency == "Once":
+        scheduler.add_job(
+            schedule_operation_log,
+            DateTrigger(run_date=timezone.now()),
+            args=[operation.id],
+            id=job_id,
+            replace_existing=True
         )
-    elif instance.frequency == "Weekly":
-        crontab_schedule, created = CrontabSchedule.objects.get_or_create(
-            minute=str(instance.preferred_time.minute),
-            hour=str(instance.preferred_time.hour),
-            day_of_week='1',
-            day_of_month='*',
-            month_of_year='*'            
-        )
+        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-        PeriodicTask.objects.update_or_create(
-        crontab=crontab_schedule,
-        name=f'log-operation-{instance.id}',
-        task='horilla.tasks.create_operation_log',
-        args=json.dumps([instance.id]),
+    elif operation.frequency == 'EveryOtherMin':
+        scheduler.add_job(
+            schedule_operation_log,
+            IntervalTrigger(minutes=2),
+            args=[operation.id],
+            id=job_id,
+            replace_existing=True
         )
+        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-    elif instance.frequency == "Monthly":
-        crontab_schedule, created = CrontabSchedule.objects.get_or_create(
-            minute=str(instance.preferred_time.minute),
-            hour=str(instance.preferred_time.hour),
-            day_of_week='*',
-            day_of_month='1',
-            month_of_year='*'            
+    elif operation.frequency == "Daily":
+        scheduler.add_job(
+            schedule_operation_log,
+            CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day='*',
+                month='*'
+            ),
+            args=[operation.id],
+            id=job_id,
+            replace_existing=True
         )
+        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-        PeriodicTask.objects.update_or_create(
-        crontab=crontab_schedule,
-        name=f'log-operation-{instance.id}',
-        task='horilla.tasks.create_operation_log',
-        args=json.dumps([instance.id]),
+    elif operation.frequency == "Weekly":
+        scheduler.add_job(
+            schedule_operation_log,
+            CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='1',
+                day='*',
+                month='*'
+            ),
+            args=[operation.id],
+            id=job_id,
+            replace_existing=True
         )
+        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-    elif instance.frequency == "Yearly":
-        crontab_schedule, created = CrontabSchedule.objects.get_or_create(
-            minute=str(instance.preferred_time.minute),
-            hour=str(instance.preferred_time.hour),
-            day_of_week='*',
-            day_of_month='*',
-            month_of_year='1'
+    elif operation.frequency == "Monthly":
+        scheduler.add_job(
+            schedule_operation_log,
+            CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day='1',
+                month='*'
+            ),
+            args=[operation.id],
+            id=job_id,
+            replace_existing=True
         )
+        logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-        PeriodicTask.objects.update_or_create(
-        crontab=crontab_schedule,
-        name=f'log-operation-{instance.id}',
-        task='horilla.tasks.create_operation_log',
-        args=json.dumps([instance.id]),
+    elif operation.frequency == "Yearly":
+        scheduler.add_job(
+            schedule_operation_log,
+            CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day='1',
+                month='1'
+            ),
+            args=[operation.id],
+            id=job_id,
+            replace_existing=True
         )
+        logger.info(f"Scheduled job {job_id} for operation {operation.id}")

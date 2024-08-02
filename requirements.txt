@@ -64,10 +64,9 @@ gunicorn
 psycopg2-binary
 whitenoise
 pyzk==0.9
-celery==5.4.0
-django-celery-beat
-django-celery-results
 weasyprint
 django-redis
 SQLAlchemy
 django-flatpickr
+django-apscheduler
+apscheduler
