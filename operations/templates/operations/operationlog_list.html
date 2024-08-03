@@ -600,12 +600,12 @@
                         {% if operationlog.approved %}
                             <form action="{% url 'operationlog-toggle-approved' operationlog_id=operationlog.id approved_value='false' %}" onsubmit="return confirm('{% trans "Do you want to disapprove this operation log?" %}')" method="post">
                                 {% csrf_token %}
-                                <button type="submit" class="oh-btn oh-btn--disapprove">{% trans 'Disapprove' %}</button>
+                                <button type="submit" onclick="event.stopPropagation()" class="oh-btn oh-btn--disapprove">{% trans 'Disapprove' %}</button>
                             </form>
                         {% else %}
                             <form action="{% url 'operationlog-toggle-approved' operationlog_id=operationlog.id approved_value='true' %}" onsubmit="return confirm('{% trans "Do you want to Approve this operation log?" %}')" method="post">
                                 {% csrf_token %}
-                                <button type="submit" class="oh-btn oh-btn--approve">{% trans 'Approve' %}</button>
+                                <button type="submit" onclick="event.stopPropagation()" class="oh-btn oh-btn--approve">{% trans 'Approve' %}</button>
                             </form>
                         {% endif %}
                         {% if perms.operations.change_operationlog or perms.operations.delete_operationlog %}
