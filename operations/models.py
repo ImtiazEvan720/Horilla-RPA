@@ -9,7 +9,7 @@ import os
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from datetime import time
+from datetime import time,date
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -29,6 +29,11 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 import logging
 
 logger = logging.getLogger("apscheduler")
+
+
+def get_day_of_week_index(day):
+    weekdays = ["sun","mon","tue","wed","thu","fri","sat","sun"]
+    return weekdays.index(day)
 
 def get_current_time():
     now = timezone.now()
@@ -99,7 +104,7 @@ def schedule_operation_tasks():
             trigger = CronTrigger(
                 minute=operation.preferred_time.minute,
                 hour=operation.preferred_time.hour,
-                day_of_week='1',
+                day_of_week=get_day_of_week_index(operation.day_of_week),
                 day='*',
                 month='*'
             )
@@ -108,7 +113,7 @@ def schedule_operation_tasks():
                 minute=operation.preferred_time.minute,
                 hour=operation.preferred_time.hour,
                 day_of_week='*',
-                day='1',
+                day=operation.day_of_month,
                 month='*'
             )
         elif operation.frequency == "Yearly":
@@ -116,8 +121,8 @@ def schedule_operation_tasks():
                 minute=operation.preferred_time.minute,
                 hour=operation.preferred_time.hour,
                 day_of_week='*',
-                day='1',
-                month='1'
+                day=operation.preferred_date.day,
+                month=operation.preferred_date.month
             )
 
         if trigger:
@@ -137,10 +142,29 @@ class Operation(HorillaModel):
         ("Monthly", _("Monthly")),
         ("Yearly", _("Yearly")),
     ]
+
+    DAYS_OF_WEEK = [
+        ("mon", _('Monday')),
+        ("tue", _('Tuesday')),
+        ("wed", _('Wednesday')),
+        ("thu", _('Thursday')),
+        ("fri", _('Friday')),
+        ("sat", _('Saturday')),
+        ("sun", _('Sunday')),
+    ]
+
+    # Define choices for days of the month (1 to 30)
+    DAYS_OF_MONTH = [(i, str(i)) for i in range(1, 31)]
+    
+
     name = models.CharField(max_length=100)
     description = models.TextField()
     frequency = models.CharField(choices=MAINTENANCE_SCHEDULE,max_length=100)
     preferred_time = models.TimeField(verbose_name=_("Preferred Time"),default=time(0,0))
+    preferred_date = models.DateField(null=True, blank=True)
+    day_of_week = models.CharField(max_length=3,choices=DAYS_OF_WEEK,default='mon',null=True, blank=True)
+    day_of_month = models.IntegerField(choices=DAYS_OF_MONTH,default=1,null=True, blank=True)
+
     assigned_to = models.ForeignKey(Employee,on_delete=models.PROTECT,null=True, blank=True)
     related_asset = models.ForeignKey(Asset, on_delete=models.PROTECT,null=True, blank=True)
 
@@ -214,7 +238,7 @@ def schedule_operation_logs(sender, instance, **kwargs):
                 CronTrigger(
                     minute=operation.preferred_time.minute,
                     hour=operation.preferred_time.hour,
-                    day_of_week='1',
+                    day_of_week=get_day_of_week_index(operation.day_of_week),
                     day='*',
                     month='*'
                 ),
@@ -231,7 +255,7 @@ def schedule_operation_logs(sender, instance, **kwargs):
                     minute=operation.preferred_time.minute,
                     hour=operation.preferred_time.hour,
                     day_of_week='*',
-                    day='1',
+                    day=operation.day_of_month,
                     month='*'
                 ),
                 args=[operation.id],
@@ -247,8 +271,8 @@ def schedule_operation_logs(sender, instance, **kwargs):
                     minute=operation.preferred_time.minute,
                     hour=operation.preferred_time.hour,
                     day_of_week='*',
-                    day='1',
-                    month='1'
+                    day=operation.preferred_date.day,
+                    month=operation.preferred_date.month
                 ),
                 args=[operation.id],
                 id=job_id,
