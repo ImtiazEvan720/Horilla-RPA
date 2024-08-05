@@ -148,3 +148,11 @@ whoosh_index/
 
 # Ignore Django's staticfiles directory
 staticfiles/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*

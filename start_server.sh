@@ -4,6 +4,10 @@
 DJANGO_SETTINGS_MODULE="myproject.settings"
 DJANGO_APP="horilla"
 
+# Define memory limit and concurrency
+MEMORY_LIMIT_KB=200000  # Memory limit in kilobytes (200 MB)
+CONCURRENCY=1           # Number of worker processes
+
 # Navigate to the project directory (assuming the script is run from the root)
 cd "$(dirname "$0")" || exit
 
@@ -33,10 +37,10 @@ fi
 
 # Start the Gunicorn server
 echo "Starting the Gunicorn server..."
-gunicorn --bind 0.0.0.0:80 horilla.wsgi:application &
+gunicorn --bind 0.0.0.0:80 horilla.wsgi:application
 
 # Start the Celery worker
-echo "Starting the Celery worker..."
-celery -A $DJANGO_APP worker --loglevel=info &
-celery -A $DJANGO_APP beat --loglevel=debug
+# echo "Starting the Celery worker..."
+celery -A $DJANGO_APP worker --loglevel=info --max-memory-per-child=$MEMORY_LIMIT_KB --concurrency=$CONCURRENCY &
+celery -A $DJANGO_APP beat
 

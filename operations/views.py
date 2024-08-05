@@ -19,6 +19,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import formats
 from django.template.loader import get_template
 from weasyprint import HTML
+from django_celery_beat.models import PeriodicTask
 
 from operations.filters import(
     OperationFilter,
@@ -27,7 +28,7 @@ from operations.filters import(
 
 from operations.models import(
     Operation,
-    OperationLog
+    OperationLog,    
 )
 
 from operations.forms import(
@@ -54,8 +55,8 @@ from horilla.decorators import (
     permission_required,
 )
 from notifications.signals import notify
-from django_celery_beat.models import PeriodicTask
 from django.db import DatabaseError
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 @login_required
@@ -132,11 +133,11 @@ def operation_delete(request, operation_id):
     try:
         operation = Operation.objects.get(id=operation_id)
         task_name = f'log-operation-{operation_id}'
-    
+        
         deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
         deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
-        if deleted_count > 0 or deleted_count_logs > 0:
-            print(f"Successfully deleted {deleted_count} task(s) and {deleted_count_logs} operations with name '{task_name}'.")                        
+        if deleted_count_logs > 0 :
+            print(f"Successfully deleted {deleted_count_logs} operations with name '{task_name}'.")                        
         else:
             print(f"No task found with name '{task_name}'.")                        
     except Exception as e:
@@ -310,8 +311,13 @@ def operationlog_list(request):
         # Filter OperationLog objects where performed_by is the current request user's employee instance
         operationLogs = OperationLog.objects.filter(performed_by=request.user.employee_get)
 
+    paginator = Paginator(operationLogs, 10)  # Show 10 items per page
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "operationlogs": operationLogs,
+        "operationlogs": page_obj,
         # "operationLogs":operationLogs,
     }
     return render(request, "operations/operationlog_list.html", context)

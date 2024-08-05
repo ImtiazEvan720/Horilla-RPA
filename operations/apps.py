@@ -4,9 +4,9 @@ Description: Configuration for the 'asset' app.
 """
 
 from django.apps import AppConfig
+import logging
 
-
-class AssetConfig(AppConfig):
+class OperationConfig(AppConfig):
     """
     Class: AssetConfig
     Description: Configuration class for the 'asset' app.

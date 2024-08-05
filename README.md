@@ -5,14 +5,24 @@ Horilla is a Free and Open Source HRMS Software.
 <img width="1470" alt="Screenshot 2024-03-15 at 3 05 20 PM" src="https://github.com/horilla-opensource/horilla/assets/131998600/1317bd0a-03a8-40be-8fb2-ecb655bb5c13">
 
 
-## **Deploy Docker**
-____
-The project can be started by executing start_services.sh, it will start the necessary docker containers and the webserver will listen for incoming requests on localhost/127.0.0.1 of the machine. In case docker services are not installed on the device it will automatically install the 
-necessary services. To stop the docker containers use script stop_services.sh.
+## **Installation(Docker)**
 
-It's important to mention that on some Ubuntu machines, deploying the project may require elevated permissions. For these cases, you might need to 
+### **For Mac/Linux**
 
-use sudo to execute certain commands.
+1. **Clone the Project from GitHub**
+
+   Open your terminal and run:
+
+   git clone the_repository_url
+
+2. **Navigate to the Project Directory**
+
+Change to the directory of the cloned project:
+
+bash
+
+cd repository
+
 
 
 ## **Installation**
