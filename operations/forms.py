@@ -48,7 +48,7 @@ class OperationForm(ModelForm):
         widgets = {
             "preferred_time": TimeInput(attrs={'id':'timepicker','placeholder':'Select time'},format="%H:%M"),
             "frequency": forms.Select(attrs={'id': 'frequency-field'}),   
-            "preferred_date" : TextInput(attrs={'class': 'form-control', 'type':'date'})
+            "preferred_date" : TextInput(attrs={'id':'datepicker','class': 'form-control', 'type':'date'})
         }
 
 class OperationlogForm(ModelForm):

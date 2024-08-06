@@ -84,22 +84,22 @@
                 {{operation_form.frequency}}
                 {{operation_form.frequency.errors}}
               </div>              
-              <div class="oh-input__group ">
+              <div class="oh-input__group " id="day_of_week_field">
                   <label class="oh-input__label" for="{{operation_form.day_of_week.id_for_label}}">{% trans "Day Of Week" %}</label>
                   {{operation_form.day_of_week}}
                   {{operation_form.day_of_week.errors}}
               </div>
-              <div class="oh-input__group ">
+              <div class="oh-input__group " id="day_of_month_field">
                   <label class="oh-input__label" for="{{operation_form.day_of_month.id_for_label}}">{% trans "Day of Month" %}</label>
                   {{operation_form.day_of_month}}
                   {{operation_form.day_of_month.errors}}
               </div>
-              <div class="oh-input__group ">
+              <div class="oh-input__group " id="preferred-time-field">
                 <label class="oh-input__label" for="{{operation_form.frequency.id_for_label}}">{% trans "Preferred Time" %}</label>
                 {{operation_form.preferred_time}}
                 {{operation_form.preferred_time.errors}}
               </div>
-              <div class="oh-input__group ">
+              <div class="oh-input__group " id="preferred-date-field">
                 <label class="oh-input__label" for="{{operation_form.frequency.id_for_label}}">{% trans "Preferred Date" %}</label>
                 {{operation_form.preferred_date}}
                 {{operation_form.preferred_date.errors}}
@@ -118,6 +118,75 @@
 </div>
 
 {% endif %}
+
+
+<script>
+    console.log("Script loaded !!");
+    
+    initialSelectedFrequency = $('#frequency-field').val();  
+    adjust_view(initialSelectedFrequency);
+    
+    $('#frequency-field').on("change",function(){
+        
+        selectedFrequency = $(this).val();        
+        adjust_view(selectedFrequency);
+    });
+    
+    // Initialize the timepicker
+    $('#timepicker').timepicker({
+        timeFormat: 'HH:mm',
+        interval: 15,                
+        dynamic: false,
+        dropdown: true,
+        scrollbar: true     
+    });
+
+    function adjust_view(state)
+    {
+      switch(state){
+            case 'Daily':
+                $('#preferred-time-field').removeClass('hidden');    
+                $('#preferred-date-field').addClass('hidden');
+                $('#day_of_month_field').addClass('hidden');
+                $('#day_of_week_field').addClass('hidden');
+                $('#datepicker')[0].value = "";   
+            break;
+            case 'Monthly':
+                $('#preferred-time-field').removeClass('hidden');    
+                $('#preferred-date-field').addClass('hidden');
+                $('#day_of_month_field').removeClass('hidden');
+                $('#day_of_week_field').addClass('hidden');
+                $('#datepicker')[0].value = "";   
+            break;
+            case 'Weekly':
+                $('#preferred-time-field').removeClass('hidden');    
+                $('#preferred-date-field').addClass('hidden');
+                $('#day_of_month_field').addClass('hidden');
+                $('#day_of_week_field').removeClass('hidden');                
+                $('#datepicker')[0].value = "";   
+            break;
+            case 'Yearly':
+                $('#preferred-time-field').removeClass('hidden');    
+                $('#preferred-date-field').removeClass('hidden');
+                $('#day_of_month_field').addClass('hidden');
+                $('#day_of_week_field').addClass('hidden');
+                var date = new Date();
+                date.setDate(date.getDate() + 1);
+                $('#datepicker')[0].value = date.toISOString().split('T')[0];                
+            break;
+            default:
+                $('#preferred-time-field').addClass('hidden');    
+                $('#preferred-date-field').addClass('hidden');
+                $('#day_of_month_field').addClass('hidden');
+                $('#day_of_week_field').addClass('hidden');
+                $('#datepicker')[0].value = "";   
+            break;
+        }
+    }
+    
+</script>
+
+
 
 <script>
   // $(document).ready(function() {
