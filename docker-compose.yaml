@@ -42,6 +42,8 @@ services:
     ports:
       - 6379:6379
     restart: unless-stopped
+    volumes:
+      - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -50,3 +52,4 @@ services:
 
 volumes:
   horilla-data:
+  redis-data:
