@@ -25,15 +25,20 @@ Horilla is a Free and Open Source HRMS Software.
 
     Change to the directory of the cloned project:
 
-    bash
+    ```bash
 
-    cd repository
+    cd path-to-repository
+
+    ```
 
 4. **Start Project Through Docker Compose**
 
     On the Bash put 
 
+
+    ```bash
     docker-compose up
+    ```
 
     the webserver should be listenning on the localhost or 127.0.0.1
 
@@ -48,29 +53,41 @@ Horilla is a Free and Open Source HRMS Software.
 
     Start Docker Desktop and wait for it to start. You should see the Docker icon in your system tray.
 
-    Verify Docker installation by opening Command Prompt or PowerShell and running:
+    Verify Docker installation by opening Command Prompt or PowerShell and running:    
 
-    bash
-
+    ```bash
     docker --version
+    ```
 
 2. **Clone the Project from GitHub**
 
    Open your terminal and run:
 
+    ```bash
+
    git clone git@github.com:ImtiazEvan720/Horilla-RPA.git
+
+   ```
 
 3. **Navigate to the Project Directory**
 
     Open Bash from Docker Desktop User Interface, then
 
-    cd repository
+    ```bash
+
+    cd path-to-repository
+    
+    ```
 
 4. **Start Project Through Docker Compose**
 
     On the Bash put 
 
+    ```bash
+
     docker-compose up
+    
+    ```
 
     the webserver should be listenning on the localhost or 127.0.0.1
 
