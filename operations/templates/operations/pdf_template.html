@@ -36,11 +36,19 @@
         tr:hover {
             background-color: #e9ecef; /* Slightly darker grey for hover */
         }
+        .timestamp {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>{{title}}</h1>
     <p>{{content}}</p>
+    <div class="timestamp">
+        {{ current_time }}
+    </div>
     <table>
         <thead>
             <tr>

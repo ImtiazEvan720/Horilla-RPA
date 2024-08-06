@@ -427,6 +427,7 @@ def generate_pdf(request):
         'operation_logs':operationLogs,
         'title': 'Operation Logs',
         'content': 'Operation Logs for Employee ' + request.user.employee_get.get_full_name(),
+        'current_time': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
     # Render HTML template
