@@ -127,11 +127,9 @@
     adjust_view(initialSelectedFrequency);
     
     $('#frequency-field').on("change",function(){
-
-        const targetFrequencies = ["Daily", "Monthly", "Weekly", "Yearly"];
+        
         selectedFrequency = $(this).val();        
         adjust_view(selectedFrequency);
-
     });
     
     // Initialize the timepicker
@@ -151,30 +149,37 @@
                 $('#preferred-date-field').addClass('hidden');
                 $('#day_of_month_field').addClass('hidden');
                 $('#day_of_week_field').addClass('hidden');
+                $('#datepicker')[0].value = "";   
             break;
             case 'Monthly':
                 $('#preferred-time-field').removeClass('hidden');    
                 $('#preferred-date-field').addClass('hidden');
                 $('#day_of_month_field').removeClass('hidden');
                 $('#day_of_week_field').addClass('hidden');
+                $('#datepicker')[0].value = "";   
             break;
             case 'Weekly':
                 $('#preferred-time-field').removeClass('hidden');    
                 $('#preferred-date-field').addClass('hidden');
                 $('#day_of_month_field').addClass('hidden');
-                $('#day_of_week_field').removeClass('hidden');
+                $('#day_of_week_field').removeClass('hidden');                
+                $('#datepicker')[0].value = "";   
             break;
             case 'Yearly':
                 $('#preferred-time-field').removeClass('hidden');    
                 $('#preferred-date-field').removeClass('hidden');
                 $('#day_of_month_field').addClass('hidden');
                 $('#day_of_week_field').addClass('hidden');
+                var date = new Date();
+                date.setDate(date.getDate() + 1);
+                $('#datepicker')[0].value = date.toISOString().split('T')[0];                
             break;
             default:
                 $('#preferred-time-field').addClass('hidden');    
                 $('#preferred-date-field').addClass('hidden');
                 $('#day_of_month_field').addClass('hidden');
                 $('#day_of_week_field').addClass('hidden');
+                $('#datepicker')[0].value = "";   
             break;
         }
     }
