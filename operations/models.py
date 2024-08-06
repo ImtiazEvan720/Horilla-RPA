@@ -4,215 +4,260 @@ Models for Asset Management System
 This module defines Django models to manage assets, their categories, assigning, and requests
 within an Asset Management System.
 """
-
+import json
+import os
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
+from datetime import time,date
 from django.utils.translation import gettext_lazy as _
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from base.horilla_company_manager import HorillaCompanyManager
 from base.models import Company
 from employee.models import Employee
 from asset.models import Asset
 from horilla.models import HorillaModel
+from horilla.tasks import create_operation_log
+from django_celery_beat.models import PeriodicTask, IntervalSchedule, CrontabSchedule
+
+import logging
+
+logger = logging.getLogger("scheduler")
 
 
-# class AssetCategory(HorillaModel):
-#     """
-#     Represents a category for different types of assets.
-#     """
+def get_day_of_week_index(day):
+    weekdays = ["sun","mon","tue","wed","thu","fri","sat","sun"]
+    return weekdays.index(day)
 
-#     asset_category_name = models.CharField(max_length=255, unique=True)
-#     asset_category_description = models.TextField(max_length=255)
-#     objects = models.Manager()
-#     company_id = models.ManyToManyField(Company, blank=True, verbose_name=_("Company"))
+def get_current_time():
+    now = timezone.now()
+    return now.time()
 
-#     def __str__(self):
-#         return f"{self.asset_category_name}"
+    scheduler.add_job(
+        job_func,
+        trigger,
+        args=args,
+        id=job_id,
+        replace_existing=replace_existing
+    )
+    logger.info(f"Added job {job_id} to scheduler.")
 
+# Define the job function
+# def schedule_operation_log(operation_id):
+#     create_operation_log(operation_id)
 
-# class AssetLot(HorillaModel):
-#     """
-#     Represents a lot associated with a collection of assets.
-#     """
+# def schedule_operation_tasks():
+    from .models import Operation,add_job
 
-#     lot_number = models.CharField(max_length=30, null=False, blank=False, unique=True)
-#     lot_description = models.TextField(null=True, blank=True, max_length=255)
-#     company_id = models.ManyToManyField(Company, blank=True, verbose_name=_("Company"))
-#     objects = HorillaCompanyManager()
+    operations = Operation.objects.all()
+    for operation in operations:
+        job_id = f'log-operation-{operation.id}'
 
-#     def __str__(self):
-#         return f"{self.lot_number}"
+        trigger = None
+        if operation.frequency == "Once":
+            trigger = DateTrigger(run_date=timezone.now())
+        elif operation.frequency == 'EveryOtherMin':
+            trigger = IntervalTrigger(minutes=2)
+        elif operation.frequency == "Daily":
+            trigger = CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day='*',
+                month='*'
+            )            
+        elif operation.frequency == "Weekly":
+            trigger = CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week=get_day_of_week_index(operation.day_of_week),
+                day='*',
+                month='*'
+            )
+        elif operation.frequency == "Monthly":
+            trigger = CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day=operation.day_of_month,
+                month='*'
+            )
+        elif operation.frequency == "Yearly":
+            trigger = CronTrigger(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day=operation.preferred_date.day,
+                month=operation.preferred_date.month
+            )
 
-
-# class Asset(HorillaModel):
-#     """
-#     Represents a asset with various attributes.
-#     """
-
-#     ASSET_STATUS = [
-#         ("In use", _("In Use")),
-#         ("Available", _("Available")),
-#         ("Not-Available", _("Not-Available")),
-#     ]
-#     asset_name = models.CharField(max_length=255)
-#     owner = models.ForeignKey(Employee, on_delete=models.PROTECT, null=True, blank=True)
-#     asset_description = models.TextField(null=True, blank=True, max_length=255)
-#     asset_tracking_id = models.CharField(max_length=30, null=False, unique=True)
-#     asset_purchase_date = models.DateField()
-#     asset_purchase_cost = models.DecimalField(max_digits=10, decimal_places=2)
-#     asset_category_id = models.ForeignKey(AssetCategory, on_delete=models.PROTECT)
-#     asset_status = models.CharField(
-#         choices=ASSET_STATUS, default="Available", max_length=40
-#     )
-#     asset_lot_number_id = models.ForeignKey(
-#         AssetLot, on_delete=models.PROTECT, null=True, blank=True
-#     )
-#     expiry_date = models.DateField(null=True, blank=True)
-#     notify_before = models.IntegerField(default=1, null=True)
-#     objects = HorillaCompanyManager("asset_category_id__company_id")
-
-#     def __str__(self):
-#         return f"{self.asset_name}-{self.asset_tracking_id}"
-
-#     def clean(self):
-#         existing_asset = Asset.objects.filter(
-#             asset_tracking_id=self.asset_tracking_id
-#         ).exclude(
-#             id=self.pk
-#         )  # Exclude the current instance if updating
-#         if existing_asset.exists():
-#             raise ValidationError(
-#                 {
-#                     "asset_description": _(
-#                         "An asset with this tracking ID already exists."
-#                     )
-#                 }
-#             )
-#         return super().clean()
+        if trigger:
+            try:
+                add_job(schedule_operation_log, trigger, [operation.id], job_id)
+            except Exception as e:
+                logger.error(f"Failed to add job {job_id}: {e}")
 
 
 class Operation(HorillaModel):
     MAINTENANCE_SCHEDULE = [
+        ("Once",_("Once")),
+        ("OnDemand",_("On Demand")),
+        ("EveryOtherMin",_("Every Other Min")),
         ("Daily", _("Daily")),
         ("Weekly", _("Weekly")),
         ("Monthly", _("Monthly")),
         ("Yearly", _("Yearly")),
     ]
+
+    DAYS_OF_WEEK = [
+        ("mon", _('Monday')),
+        ("tue", _('Tuesday')),
+        ("wed", _('Wednesday')),
+        ("thu", _('Thursday')),
+        ("fri", _('Friday')),
+        ("sat", _('Saturday')),
+        ("sun", _('Sunday')),
+    ]
+
+    # Define choices for days of the month (1 to 30)
+    DAYS_OF_MONTH = [(i, str(i)) for i in range(1, 31)]
+    
+
     name = models.CharField(max_length=100)
     description = models.TextField()
     frequency = models.CharField(choices=MAINTENANCE_SCHEDULE,max_length=100)
-    related_asset = models.ForeignKey(Asset, on_delete=models.PROTECT)
+    preferred_time = models.TimeField(verbose_name=_("Preferred Time"),default=time(0,0))
+    preferred_date = models.DateField(null=True, blank=True)
+    day_of_week = models.CharField(max_length=3,choices=DAYS_OF_WEEK,default='mon',null=True, blank=True)
+    day_of_month = models.IntegerField(choices=DAYS_OF_MONTH,default=1,null=True, blank=True)
+
+    assigned_to = models.ForeignKey(Employee,on_delete=models.PROTECT,null=True, blank=True)
+    related_asset = models.ForeignKey(Asset, on_delete=models.PROTECT,null=True, blank=True)
+
+    @classmethod
+    def get_default_operation(cls):
+        exam, created = cls.objects.get_or_create(
+            name='default operation', 
+            defaults=dict(description='this is not an exam',frequency='OnDemand',preferred_time=get_current_time(),related_asset= None),
+        )
+        return exam.id
 
     def __str__(self):
         return self.name
 
 class OperationLog(HorillaModel):
-    operation = models.ForeignKey(Operation, on_delete=models.PROTECT)
-    performed_by = models.ForeignKey(Employee,on_delete=models.PROTECT)
-    date = models.DateTimeField(verbose_name=_("Operation Schedule Date"))
+    operation = models.ForeignKey(Operation, on_delete=models.PROTECT,default=Operation.get_default_operation)
+    performed_by = models.ForeignKey(Employee,on_delete=models.PROTECT,null=True, blank=True)
+    date = models.DateTimeField(verbose_name=_("Operation Schedule Date"),default=timezone.now)
     notes = models.TextField(null=True, blank=True)
+    approved = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.operation.name} - {self.id}"
 
 
-# class AssetReport(HorillaModel):
-#     title = models.CharField(max_length=255, blank=True, null=True)
-#     asset_id = models.ForeignKey(
-#         Asset, related_name="asset_report", on_delete=models.CASCADE
-#     )
+@receiver(post_save, sender=Operation)
+def schedule_operation_logs(sender, instance,created, **kwargs):
 
-#     def __str__(self):
-#         return (
-#             f"{self.asset_id} - {self.title}"
-#             if self.title
-#             else f"report for {self.asset_id}"
-#         )
+    operation = instance     
+    job_id = f'log-operation-{operation.id}'
 
+    if created:
+        logger.info("New Operation!!")
+    else:
+        logger.info("Existing Operation Update!!")
+        PeriodicTask.objects.filter(name=job_id).delete()
+    
+    try:
+        if operation.frequency == "Once":
+            create_operation_log.apply_async((operation.id,), countdown=0)
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-# class AssetDocuments(HorillaModel):
-#     asset_report = models.ForeignKey(
-#         "AssetReport", related_name="documents", on_delete=models.CASCADE
-#     )
-#     file = models.FileField(
-#         upload_to="asset/asset_report/documents/", blank=True, null=True
-#     )
+        elif operation.frequency == 'EveryOtherMin':
+            interval_schedule, created = IntervalSchedule.objects.get_or_create(
+                every=2,  # Adjust as per your interval definition
+                defaults={
+                    'period': IntervalSchedule.MINUTES,  # Assuming DAYS is a constant in your model
+                }
+            )
+    
+            PeriodicTask.objects.update_or_create(
+                interval=interval_schedule,
+                name=f'log-operation-{operation.id}',
+                task='horilla.tasks.create_operation_log',
+                args=json.dumps([operation.id]),
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-#     def __str__(self):
-#         return f"document for {self.asset_report}"
+        elif operation.frequency == "Daily":
+            crontab_schedule, created = CrontabSchedule.objects.get_or_create(
+                minute=str(instance.preferred_time.minute),
+                hour=str(instance.preferred_time.hour),
+                day_of_week='*',
+                day_of_month='*',
+                month_of_year='*'            
+            )
+    
+            PeriodicTask.objects.update_or_create(
+                crontab=crontab_schedule,
+                name=f'log-operation-{operation.id}',
+                task='horilla.tasks.create_operation_log',
+                args=json.dumps([operation.id]),
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
+        elif operation.frequency == "Weekly":           
+            
+            crontab_schedule, created = CrontabSchedule.objects.get_or_create(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week=get_day_of_week_index(operation.day_of_week),
+                day_of_month='*',
+                month_of_year='*'            
+            )
+        
+            PeriodicTask.objects.update_or_create(
+                crontab=crontab_schedule,
+                name=f'log-operation-{operation.id}',
+                task='horilla.tasks.create_operation_log',
+                args=json.dumps([operation.id]),
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-# class ReturnImages(HorillaModel):
-#     image = models.FileField(upload_to="asset/return_images/", blank=True, null=True)
+        elif operation.frequency == "Monthly":
+            crontab_schedule, created = CrontabSchedule.objects.get_or_create(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day_of_month= operation.day_of_month,
+                month_of_year='*'            
+            )
+        
+            PeriodicTask.objects.update_or_create(
+                crontab=crontab_schedule,
+                name=f'log-operation-{operation.id}',
+                task='horilla.tasks.create_operation_log',
+                args=json.dumps([operation.id]),
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
 
-
-# class AssetAssignment(HorillaModel):
-#     """
-#     Represents the allocation and return of assets to and from employees.
-#     """
-
-#     STATUS = [
-#         ("Minor damage", _("Minor damage")),
-#         ("Major damage", _("Major damage")),
-#         ("Healthy", _("Healthy")),
-#     ]
-#     asset_id = models.ForeignKey(
-#         Asset, on_delete=models.PROTECT, verbose_name=_("asset")
-#     )
-#     assigned_to_employee_id = models.ForeignKey(
-#         Employee, on_delete=models.PROTECT, related_name="allocated_employeee"
-#     )
-#     assigned_date = models.DateField(auto_now_add=True)
-#     assigned_by_employee_id = models.ForeignKey(
-#         Employee, on_delete=models.PROTECT, related_name="assigned_by"
-#     )
-#     return_date = models.DateField(null=True, blank=True)
-#     return_condition = models.TextField(null=True, blank=True, max_length=255)
-#     return_status = models.CharField(
-#         choices=STATUS, max_length=30, null=True, blank=True
-#     )
-#     return_request = models.BooleanField(default=False)
-#     objects = HorillaCompanyManager("asset_id__asset_lot_number_id__company_id")
-#     return_images = models.ManyToManyField(
-#         ReturnImages, blank=True, related_name="return_images"
-#     )
-#     assign_images = models.ManyToManyField(
-#         ReturnImages, blank=True, related_name="assign_images"
-#     )
-
-#     class Meta:
-#         ordering = ["-id"]
-
-#     def __str__(self):
-#         return f"{self.assigned_to_employee_id} --- {self.asset_id} --- {self.return_status}"
-
-
-# class AssetRequest(HorillaModel):
-#     """
-#     Represents a request for assets made by employees.
-#     """
-
-#     STATUS = [
-#         ("Requested", _("Requested")),
-#         ("Approved", _("Approved")),
-#         ("Rejected", _("Rejected")),
-#     ]
-#     requested_employee_id = models.ForeignKey(
-#         Employee,
-#         on_delete=models.PROTECT,
-#         related_name="requested_employee",
-#         null=False,
-#         blank=False,
-#     )
-#     asset_category_id = models.ForeignKey(AssetCategory, on_delete=models.PROTECT)
-#     asset_request_date = models.DateField(auto_now_add=True)
-#     description = models.TextField(null=True, blank=True, max_length=255)
-#     asset_request_status = models.CharField(
-#         max_length=30, choices=STATUS, default="Requested", null=True, blank=True
-#     )
-#     objects = HorillaCompanyManager(
-#         "requested_employee_id__employee_work_info__company_id"
-#     )
-
-#     class Meta:
-#         ordering = ["-id"]
+        elif operation.frequency == "Yearly":
+            crontab_schedule, created = CrontabSchedule.objects.get_or_create(
+                minute=operation.preferred_time.minute,
+                hour=operation.preferred_time.hour,
+                day_of_week='*',
+                day_of_month= operation.preferred_date.day,
+                month_of_year=operation.preferred_date.month            
+            )
+        
+            PeriodicTask.objects.update_or_create(
+                crontab=crontab_schedule,
+                name=f'log-operation-{operation.id}',
+                task='horilla.tasks.create_operation_log',
+                args=json.dumps([operation.id]),
+            )
+            logger.info(f"Scheduled job {job_id} for operation {operation.id}")
+    except Exception as e:
+            logger.error(f"Failed to add job {job_id}: {e}")

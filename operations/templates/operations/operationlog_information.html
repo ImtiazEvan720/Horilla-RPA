@@ -15,7 +15,7 @@
     </div>
   </div> {% endcomment %}
   {% if operationlog.performed_by %}
-  <div class="col-12 col-md-12 col-lg-12 mt-3">
+  <div class="col-12 col-md-12 col-lg-6 mt-3">
     <div class="oh-modal__group">
       <label class="oh-timeoff-modal__stat-title">{% trans "Performed By" %}</label>
       <div class="oh-modal__description">
@@ -36,6 +36,13 @@
     <div class="oh-modal__group">
       <label class="oh-timeoff-modal__stat-title">{% trans "Notes" %}</label>
       <label class="oh-timeoff-modal__stat-count">{{operationlog.notes}}</label>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-12 col-lg-6 mt-3">
+    <div class="oh-modal__group">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Approved Status" %}</label>
+      <label class="oh-timeoff-modal__stat-count">{{operationlog.approved}}</label>
     </div>
   </div>
 

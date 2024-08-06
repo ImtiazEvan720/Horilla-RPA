@@ -1,3 +1,10 @@
+
+<style>
+    * {
+        pointer-events: none; /* Prevent tooltip display */
+    }   
+</style>
+
 {% load static i18n %}
 {% if messages %}
 <div class="oh-wrapper">
@@ -8,13 +15,14 @@
     </div>
   </div>
   {% endfor %}
-  <script>
+  <script>      
       setTimeout(function () {
         $('.oh-modal__close').click()
       }, 1000);
   </script>
 </div>
 {% endif %}
+
 <div class="oh-modal__dialog-header">
     <button
     type="button"
@@ -47,6 +55,31 @@
                 {{operation_form.frequency}}
                 {{operation_form.frequency.errors}}
             </div>
+            <div class="oh-input__group " id="day_of_week_field">
+                <label class="oh-input__label" for="{{operation_form.day_of_week.id_for_label}}">{% trans "Day Of Week" %}</label>
+                {{operation_form.day_of_week}}
+                {{operation_form.day_of_week.errors}}
+            </div>
+            <div class="oh-input__group " id="day_of_month_field">
+                <label class="oh-input__label" for="{{operation_form.day_of_month.id_for_label}}">{% trans "Day of Month" %}</label>
+                {{operation_form.day_of_month}}
+                {{operation_form.day_of_month.errors}}
+            </div>
+            <div class="oh-input__group " id="preferred-time-field">
+                <label class="timepicker" for="{{operation_form.preferred_time.id_for_label}}">{% trans "Preferred Time" %}</label>
+                {{operation_form.preferred_time}}
+                {{operation_form.preferred_time.errors}}
+            </div>
+            <div class="oh-input__group " id="preferred-date-field">
+                <label for="{{operation_form.preferred_time.id_for_label}}">{% trans "Preferred Date" %}</label>
+                {{operation_form.preferred_date}}
+                {{operation_form.preferred_date.errors}}
+            </div>
+            <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operation_form.assigned_to.id_for_label}}">{% trans "Assigned To" %}</label>
+                {{operation_form.assigned_to}}
+                {{operation_form.assigned_to.errors}}
+            </div>
             <div class="oh-input__group ">
                 <label class="oh-input__label" for="{{operation_form.related_asset.id_for_label}}">{% trans "Related Asset" %}</label>
                 {{operation_form.related_asset}}
@@ -60,3 +93,60 @@
         </div>
     </form>
 </div>
+
+<script>
+    console.log("Script loaded !!");
+    
+    $('#preferred-time-field').addClass('hidden');    
+    $('#preferred-date-field').addClass('hidden');
+    $('#day_of_month_field').addClass('hidden');
+    $('#day_of_week_field').addClass('hidden');
+    
+    $('#frequency-field').on("change",function(){
+        const targetFrequencies = ["Daily", "Monthly", "Weekly", "Yearly"];
+        selectedFrequency = $(this).val();
+
+        switch(selectedFrequency){
+            case 'Daily':
+                $('#preferred-time-field').removeClass('hidden');    
+                $('#preferred-date-field').addClass('hidden');
+                $('#day_of_month_field').addClass('hidden');
+                $('#day_of_week_field').addClass('hidden');
+            break;
+            case 'Monthly':
+                $('#preferred-time-field').removeClass('hidden');    
+                $('#preferred-date-field').addClass('hidden');
+                $('#day_of_month_field').removeClass('hidden');
+                $('#day_of_week_field').addClass('hidden');
+            break;
+            case 'Weekly':
+                $('#preferred-time-field').removeClass('hidden');    
+                $('#preferred-date-field').addClass('hidden');
+                $('#day_of_month_field').addClass('hidden');
+                $('#day_of_week_field').removeClass('hidden');
+            break;
+            case 'Yearly':
+                $('#preferred-time-field').removeClass('hidden');    
+                $('#preferred-date-field').removeClass('hidden');
+                $('#day_of_month_field').addClass('hidden');
+                $('#day_of_week_field').addClass('hidden');
+            break;
+            default:
+                $('#preferred-time-field').addClass('hidden');    
+                $('#preferred-date-field').addClass('hidden');
+                $('#day_of_month_field').addClass('hidden');
+                $('#day_of_week_field').addClass('hidden');
+            break;
+        }
+    });
+    
+    // Initialize the timepicker
+    $('#timepicker').timepicker({
+        timeFormat: 'HH:mm',
+        interval: 15,                
+        dynamic: false,
+        dropdown: true,
+        scrollbar: true     
+    });
+    
+</script>

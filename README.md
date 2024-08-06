@@ -5,6 +5,79 @@ Horilla is a Free and Open Source HRMS Software.
 <img width="1470" alt="Screenshot 2024-03-15 at 3 05 20 PM" src="https://github.com/horilla-opensource/horilla/assets/131998600/1317bd0a-03a8-40be-8fb2-ecb655bb5c13">
 
 
+## **Installation(Docker)**
+
+### **For Ubuntu/Debian**
+
+1. **Update your package list and Install Docker:**
+
+    sudo apt update
+
+    sudo apt install docker.io
+
+2. **Clone the Project from GitHub**
+
+   Open your terminal and run:
+
+   git clone git@github.com:ImtiazEvan720/Horilla-RPA.git
+
+3. **Navigate to the Project Directory**
+
+    Change to the directory of the cloned project:
+
+    bash
+
+    cd repository
+
+4. **Start Project Through Docker Compose**
+
+    On the Bash put 
+
+    docker-compose up
+
+    the webserver should be listenning on the localhost or 127.0.0.1
+
+
+### **For Windows**
+
+1. **Install Docker Desktop for Windows**
+
+    Download Docker Desktop for Windows from the [Official Docker Website](https://www.docker.com/products/docker-desktop/).
+
+    Run the installer and follow the on-screen instructions. Ensure WSL 2 (Windows Subsystem for Linux) is enabled if prompted.
+
+    Start Docker Desktop and wait for it to start. You should see the Docker icon in your system tray.
+
+    Verify Docker installation by opening Command Prompt or PowerShell and running:
+
+    bash
+
+    docker --version
+
+2. **Clone the Project from GitHub**
+
+   Open your terminal and run:
+
+   git clone git@github.com:ImtiazEvan720/Horilla-RPA.git
+
+3. **Navigate to the Project Directory**
+
+    Open Bash from Docker Desktop User Interface, then
+
+    cd repository
+
+4. **Start Project Through Docker Compose**
+
+    On the Bash put 
+
+    docker-compose up
+
+    the webserver should be listenning on the localhost or 127.0.0.1
+
+
+
+
+
 ## **Installation**
 ____
 Horilla can be installed on your system by following the below commands.

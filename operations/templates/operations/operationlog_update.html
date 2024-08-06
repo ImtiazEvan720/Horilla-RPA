@@ -75,6 +75,11 @@
                 {{operationlog_form.date.errors}}
               </div>
               <div class="oh-input__group ">
+                <label class="oh-input__label" for="{{operationlog_form.approved.id_for_label}}" >{% trans "Approved Status" %}</label>
+                {{operationlog_form.approved}}
+                {{operationlog_form.approved.errors}}
+              </div>
+              <div class="oh-input__group ">
                 <label class="oh-input__label" for="{{operationlog_form.notes.id_for_label}}" >{% trans "Notes" %}</label>
                 {{operationlog_form.notes}}
                 {{operationlog_form.notes.errors}}

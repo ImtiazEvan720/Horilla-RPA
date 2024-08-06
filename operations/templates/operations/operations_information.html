@@ -39,6 +39,13 @@
     </div>
   </div>
 
+  <div class="col-12 col-md-12 col-lg-6 mt-3">
+    <div class="oh-modal__group">
+      <label class="oh-timeoff-modal__stat-title">{% trans "Preferred Time" %}</label>
+      <label class="oh-timeoff-modal__stat-count">{{operation.preferred_time}}</label>
+    </div>
+  </div>
+
   <div class="oh-btn-group">
     <a hx-get="{% url 'operation-update' operation_id=operation.id %}?{{pg}}&requests_ids={{requests_ids}}"
       data-toggle="oh-modal-toggle"

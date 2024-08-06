@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <style>
+        /* Define your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #d0d0d0; /* Grey border */
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff; /* Blue background for headers */
+            color: #ffffff; /* White text */
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9; /* Light grey for even rows */
+        }
+        tr:hover {
+            background-color: #e9ecef; /* Slightly darker grey for hover */
+        }
+        .timestamp {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{title}}</h1>
+    <p>{{content}}</p>
+    <div class="timestamp">
+        {{ current_time }}
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Performed By</th>
+                <th>Date</th>
+                <th>Notes</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in operation_logs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td> 
+                    <td>{{ log.operation.name }}</td>
+                    <td>{{ log.performed_by }}</td>
+                    <td>{{ log.date }}</td>
+                    <td>{{ log.notes }}</td>
+                    <td>{{ log.approved }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

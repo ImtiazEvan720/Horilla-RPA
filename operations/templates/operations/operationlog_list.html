@@ -5,8 +5,8 @@
 {% load widget_tweaks %}
 {% load assets_custom_filter %}
 
-
-<style>
+{% if request.user.is_superuser %}
+  <style>
     .button-link {
         display: inline-block;
         padding: 12px 15px;
@@ -26,7 +26,112 @@
       top: 25px;
       right: 15px;
     }
+  </style>  
+{% else %}
+  <style>
+    .button-link {
+        display: inline-block;
+        padding: 12px 15px;
+        background-color: #F0EFEF; /* Change this to your desired button color */
+        color: #312D2D; /* Text color for the button */
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .oh-modal_close--custom {
+      border: none;
+      background: none;
+      font-size: 1.5rem;
+      opacity: 0.7;
+      position: absolute;
+      top: 25px;
+      right: 15px;
+    }
+  .oh-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+    .oh-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        transition: box-shadow 0.3s ease;
+        cursor: pointer;
+    }
+    .oh-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .oh-card__header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .oh-card__avatar img {
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+    }
+    .oh-card__title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-left: 10px;
+        color: #333;
+    }
+    .oh-card__details {
+        margin-bottom: 10px;
+    }
+    .oh-card__details span {
+        display: block;
+        margin-bottom: 5px;
+    }
+    .oh-card__actions {
+        display: flex;
+        justify-content: space-between;
+    }
+    .oh-btn {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 5px;
+        text-align: center;
+        cursor: pointer;
+        color: white;
+        text-decoration: none;
+    }
+    .oh-btn--approve {
+        background-color: #28a745;
+    }
+    .oh-btn--disapprove {
+        background-color: #ffc107;
+    }
+    .oh-btn--update {
+        background-color: #007bff;
+    }
+    .oh-btn--delete {
+        background-color: #dc3545;
+    }
   </style>
+{% endif %}
+
+<style>
+  /* Basic styling for pagination */
+  .oh-pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+  }
+  .oh-pagination__page {
+      margin: 0 10px; /* Adjust margin on both sides */
+      font-size: 16px;
+      color: #333;
+  }
+</style>
 
 <!-- start of messages -->
 {% if messages %}
@@ -231,7 +336,7 @@
                     </div>
                   </div> -->
                 <div class="oh-btn-group ml-2">
-                    {% if perms.asset.add_operationlog %}
+                    {% if perms.operations.add_operationlog %}
                         <div>
                             <a  href="#" class="oh-btn oh-btn--secondary oh-btn--shadow"
                             data-toggle="oh-modal-toggle"
@@ -242,7 +347,12 @@
                             {% trans "Create" %}
                             </a>
                         </div>
-                {% endif %}
+                    {% endif %}
+                        <div>
+                          <a  href="#" class="oh-btn oh-btn--secondary oh-btn--shadow" id="generatePdfBtn">                          
+                          {% trans "Generate Report" %}
+                          </a>
+                      </div>
                 </div>
             </div>
         </div>
@@ -280,90 +390,277 @@
     </div>
 </div>
 <div class="oh-wrapper">
-      <div class="oh-sticky-table oh-sticky-table--no-overflow mb-5">
-
-      <div class="oh-sticky-table__table" data-count="{{total_count}}">
-        <div class="oh-sticky-table__thead">
-          <div class="oh-sticky-table__tr">
-            <div class="oh-sticky-table__th">{% trans "Operation" %}</div>
-            <div class="oh-sticky-table__th">{% trans "Performed By" %}</div>
-            <div class="oh-sticky-table__th">{% trans "Date" %}</div>
-            <div class="oh-sticky-table__th">{% trans "Notes" %}</div>
-            {% if perms.asset.change_asset or perms.asset.delete_asset %}
-              <div class="oh-sticky-table__th">{% trans "Actions" %}</div>
-            {% endif %}
-          </div>
-        </div>
-        <div class="oh-sticky-table__tbody" id="assetPaginatorTarget">
-          {% for operationlog in operationlogs %}
-            <div
-              class="oh-sticky-table__tr"
-              data-toggle="oh-modal-toggle"
-              hx-get="{% url 'operationlog-information' operationlog_id=operationlog.id %}?"
-            hx-target="#objectDetailsModalTarget"
-              data-target="#objectDetailsModal"
-              draggable="true"
-              >
-              <div class="oh-sticky-table__sd">
-                <div class="oh-profile oh-profile--md">
-                  <div class="oh-profile__avatar mr-1">
-                    <img
-                      src="https://ui-avatars.com/api/?name={{operationlog.operation.name}}&background=random"
-                      class="oh-profile__image"
-                      alt="Mary Magdalene"
-                    />
-                  </div>
-                  <span class="oh-profile__name oh-text--dark"
-                    >{{operationlog.operation.name}}</span
-                  >
-                </div>
-              </div>
-              <div class="oh-sticky-table__td">{{operationlog.performed_by.get_full_name}}</div>
-              <div class="oh-sticky-table__td">{{operationlog.date}}</div>
-              <div class="oh-sticky-table__td">{{operationlog.notes}}</div>
-              <div class="oh-sticky-table__td oh-sticky-table__right">
-                <div class="oh-btn-group">
-                    <a
-                      class="oh-btn oh-btn--light-bkg w-100"
-                      data-toggle="oh-modal-toggle"
-                      data-target="#objectUpdateModal"
-                      hx-get="{% url 'operationlog-update'  operationlog_id=operationlog.id %}?{{pg}}"
-                      title="{% trans 'Update' %}"
-                      hx-target="#objectUpdateModalTarget"
-                      onclick="event.stopPropagation()"
-                      id="oh-btn-asset-update-modal"
-                    >
-                      <ion-icon
-                        name="create-outline"
-                        role="img"
-                        class="md hydrated"
-                        aria-label="create outline"
-                      ></ion-icon>
-                    </a>
-                    <form action="{% url 'operationlog-delete' operationlog_id=operationlog.id %}?{{pg}}"
-                      onsubmit="return confirm('{% trans "Do you want to delete this operation log?" %}')"
-                      method="post" style="width:100%">
-                      {% csrf_token %}
-                      <button
-                        class="oh-btn oh-btn--danger-outline oh-btn--light-bkg w-100"
-                        onclick="event.stopPropagation()"
-                        title="{% trans 'Delete' %}"
-                        >
-                        <ion-icon
-                          name="trash-outline"
-                          role="img"
-                          class="md hydrated"
-                          aria-label="trash outline"
-                        ></ion-icon>
-                      </button>
-                    </form>
-                </div>
+      <div class="oh-sticky-table oh-sticky-table--no-overflow mb-5">      
+        {% if request.user.is_superuser  %}       
+          <div class="oh-sticky-table__table" data-count="{{total_count}}">
+            <div class="oh-sticky-table__thead">
+              <div class="oh-sticky-table__tr">
+                <div class="oh-sticky-table__th">{% trans "Operation" %}</div>
+                <div class="oh-sticky-table__th">{% trans "Performed By" %}</div>
+                <div class="oh-sticky-table__th">{% trans "Date" %}</div>
+                <div class="oh-sticky-table__th">{% trans "Notes" %}</div>
+                <div class="oh-sticky-table__th">{% trans "Approved" %}</div>
+                {% if perms.operations.change_operationlog or perms.operations.delete_operationlog %}
+                  <div class="oh-sticky-table__th">{% trans "Actions" %}</div>
+                {% endif %}
               </div>
             </div>
-          {% endfor %}
-        </div>
+            <div class="oh-sticky-table__tbody" id="assetPaginatorTarget">
+              {% for operationlog in operationlogs %}
+                {% if perms.operations.change_operationlog or perms.operations.delete_operationlog %}              
+                  <div
+                      class="oh-sticky-table__tr"
+                      data-toggle="oh-modal-toggle"
+                      hx-get="{% url 'operationlog-information' operationlog_id=operationlog.id %}?"
+                    hx-target="#objectDetailsModalTarget"
+                      data-target="#objectDetailsModal"
+                      draggable="true"
+                      >
+                      <div class="oh-sticky-table__sd">
+                        <div class="oh-profile oh-profile--md">
+                          <div class="oh-profile__avatar mr-1">
+                            <img
+                              src="https://ui-avatars.com/api/?name={{operationlog.operation.name}}&background=random"
+                              class="oh-profile__image"
+                              alt="Mary Magdalene"
+                            />
+                          </div>
+                          <span class="oh-profile__name oh-text--dark"
+                            >{{operationlog.operation.name}}</span
+                          >
+                        </div>
+                      </div>
+                      <div class="oh-sticky-table__td">{{operationlog.performed_by.get_full_name}}</div>
+                      <div class="oh-sticky-table__td">{{operationlog.date}}</div>
+                      <div class="oh-sticky-table__td">{{operationlog.notes}}</div>
+                      <div class="oh-sticky-table__td">{{operationlog.approved}}</div>
+                      {% if perms.operations.change_operationlog or perms.operations.delete_operationlog %}              
+                      <div class="oh-sticky-table__td oh-sticky-table__right">
+                        <div class="oh-btn-group">
+                            <a
+                              class="oh-btn oh-btn--light-bkg w-100"
+                              data-toggle="oh-modal-toggle"
+                              data-target="#objectUpdateModal"
+                              hx-get="{% url 'operationlog-update'  operationlog_id=operationlog.id %}?{{pg}}"
+                              title="{% trans 'Update' %}"
+                              hx-target="#objectUpdateModalTarget"
+                              onclick="event.stopPropagation()"
+                              id="oh-btn-asset-update-modal"
+                            >
+                              <ion-icon
+                                name="create-outline"
+                                role="img"
+                                class="md hydrated"
+                                aria-label="create outline"
+                              ></ion-icon>
+                            </a>
+                            <form action="{% url 'operationlog-delete' operationlog_id=operationlog.id %}?{{pg}}"
+                              onsubmit="return confirm('{% trans "Do you want to delete this operation log?" %}')"
+                              method="post" style="width:100%">
+                              {% csrf_token %}
+                              <button
+                                class="oh-btn oh-btn--danger-outline oh-btn--light-bkg w-100"
+                                onclick="event.stopPropagation()"
+                                title="{% trans 'Delete' %}"
+                                >
+                                <ion-icon
+                                  name="trash-outline"
+                                  role="img"
+                                  class="md hydrated"
+                                  aria-label="trash outline"
+                                ></ion-icon>
+                              </button>
+                            </form>
+                        </div>
+                      </div>
+                      {% endif %}              
+                  </div>
+                {% else %}
+                  <div
+                  class="oh-sticky-table__tr"
+                  data-toggle="oh-modal-toggle"          
+                  draggable="true"
+                  >
+                  <div class="oh-sticky-table__sd">
+                    <div class="oh-profile oh-profile--md">
+                      <div class="oh-profile__avatar mr-1">
+                        <img
+                          src="https://ui-avatars.com/api/?name={{operationlog.operation.name}}&background=random"
+                          class="oh-profile__image"
+                          alt="Mary Magdalene"
+                        />
+                      </div>
+                      <span class="oh-profile__name oh-text--dark"
+                        >{{operationlog.operation.name}}</span
+                      >
+                    </div>
+                  </div>
+                  <div class="oh-sticky-table__td">{{operationlog.performed_by.get_full_name}}</div>
+                  <div class="oh-sticky-table__td">{{operationlog.date}}</div>
+                  <div class="oh-sticky-table__td">{{operationlog.notes}}</div>
+                  {% if operationlog.approved %}
+                  <form action="{%url 'operationlog-toggle-approved' operationlog_id=operationlog.id approved_value='false' %}"
+                          onsubmit="return confirm('{% trans "Do you want to disapprove this operation log?" %}')"
+                          method="post" style="width:100%">
+                          {% csrf_token %}
+                          <button
+                            class="oh-btn oh-btn--secondary oh-btn--shadow"
+                            onclick="event.stopPropagation()"                        
+                            >
+                            {% trans 'Disapprove' %}
+                            <!-- <ion-icon
+                              name="trash-outline"
+                              role="img"
+                              class="md hydrated"
+                              aria-label="trash outline"
+                            ></ion-icon> -->
+                          </button>
+                  </form>
+                  {% else %}
+                  <form action="{%url 'operationlog-toggle-approved' operationlog_id=operationlog.id approved_value='true' %}"
+                          onsubmit="return confirm('{% trans "Do you want to Approve this operation log?" %}')"
+                          method="post" style="width:100%">
+                          {% csrf_token %}
+                          <button
+                            class="oh-btn oh-btn--secondary oh-btn--shadow"
+                            onclick="event.stopPropagation()"                        
+                            >
+                            {% trans 'Approve' %}
+                            <!-- <ion-icon
+                              name="trash-outline"
+                              role="img"
+                              class="md hydrated"
+                              aria-label="trash outline"
+                            ></ion-icon> -->
+                          </button>
+                  </form>
+                  {% endif %}
+                  <!-- <div class="oh-sticky-table__td"><input type="checkbox" class="operationlog_checkbox" id="{{operationlog.id}}" {% if operationlog.approved %}checked{% endif %}></div>               -->
+                  {% if perms.operations.change_operationlog or perms.operations.delete_operationlog %}              
+                  <div class="oh-sticky-table__td oh-sticky-table__right">
+                    <div class="oh-btn-group">
+                        <a
+                          class="oh-btn oh-btn--light-bkg w-100"
+                          data-toggle="oh-modal-toggle"
+                          data-target="#objectUpdateModal"
+                          hx-get="{% url 'operationlog-update'  operationlog_id=operationlog.id %}?{{pg}}"
+                          title="{% trans 'Update' %}"
+                          hx-target="#objectUpdateModalTarget"
+                          onclick="event.stopPropagation()"
+                          id="oh-btn-asset-update-modal"
+                        >
+                          <ion-icon
+                            name="create-outline"
+                            role="img"
+                            class="md hydrated"
+                            aria-label="create outline"
+                          ></ion-icon>
+                        </a>
+                        <form action="{% url 'operationlog-delete' operationlog_id=operationlog.id %}?{{pg}}"
+                          onsubmit="return confirm('{% trans "Do you want to delete this operation log?" %}')"
+                          method="post" style="width:100%">
+                          {% csrf_token %}
+                          <button
+                            class="oh-btn oh-btn--danger-outline oh-btn--light-bkg w-100"
+                            onclick="event.stopPropagation()"
+                            title="{% trans 'Delete' %}"
+                            >
+                            <ion-icon
+                              name="trash-outline"
+                              role="img"
+                              class="md hydrated"
+                              aria-label="trash outline"
+                            ></ion-icon>
+                          </button>
+                        </form>
+                    </div>
+                  </div>
+                  {% endif %}              
+                  </div>
+                {% endif %}            
+              {% endfor %}
+            </div>
+          </div>
+        {% else %}
+          <div class="oh-grid">
+            {% for operationlog in operationlogs %}
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <div class="oh-card__avatar">
+                            <img src="https://ui-avatars.com/api/?name={{operationlog.operation.name}}&background=random" alt="{{ operationlog.operation.name }}">
+                        </div>
+                        <div class="oh-card__title">{{ operationlog.operation.name }}</div>
+                    </div>
+                    <div class="oh-card__details">
+                        <span><strong>Performed By:</strong> {{ operationlog.performed_by.get_full_name }}</span>
+                        <span><strong>Date:</strong> {{ operationlog.date }}</span>
+                        <span><strong>Notes:</strong> {{ operationlog.notes }}</span>
+                    </div>
+                    <div class="oh-card__actions">
+                        {% if operationlog.approved %}
+                            <form action="{% url 'operationlog-toggle-approved' operationlog_id=operationlog.id approved_value='false' %}" onsubmit="return confirm('{% trans "Do you want to disapprove this operation log?" %}')" method="post">
+                                {% csrf_token %}
+                                <button type="submit" onclick="event.stopPropagation()" class="oh-btn oh-btn--disapprove">{% trans 'Disapprove' %}</button>
+                            </form>
+                        {% else %}
+                            <form action="{% url 'operationlog-toggle-approved' operationlog_id=operationlog.id approved_value='true' %}" onsubmit="return confirm('{% trans "Do you want to Approve this operation log?" %}')" method="post">
+                                {% csrf_token %}
+                                <button type="submit" onclick="event.stopPropagation()" class="oh-btn oh-btn--approve">{% trans 'Approve' %}</button>
+                            </form>
+                        {% endif %}
+                        {% if perms.operations.change_operationlog or perms.operations.delete_operationlog %}
+                            <div>
+                                <a href="{% url 'operationlog-update' operationlog_id=operationlog.id %}" class="oh-btn oh-btn--update" title="{% trans 'Update' %}"><ion-icon name="create-outline" role="img" class="md hydrated" aria-label="create outline"></ion-icon></a>
+                                <form action="{% url 'operationlog-delete' operationlog_id=operationlog.id %}" method="post" onsubmit="return confirm('{% trans "Do you want to delete this operation log?" %}')" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="oh-btn oh-btn--delete" title="{% trans 'Delete' %}"><ion-icon name="trash-outline" role="img" class="md hydrated" aria-label="trash outline"></ion-icon></button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+          </div>
+        {% endif %}              
       </div>
-    </div>
+</div>
+<div class="oh-pagination">  
+  <span
+      class="oh-pagination__page"
+      >
+      {% trans "" %} {% trans "" %}
+      </span
+    >
+  <nav class="oh-pagination__nav">
+      <span class="oh-pagination__page">      
+      </span>
+    <ul class="oh-pagination__items">
+      {% if operationlogs.has_previous %}
+      <li class="oh-pagination__item oh-pagination__item--wide">
+        <a hx-target='#view-container' href="?page=1" class="oh-pagination__link">{% trans "First" %}</a>
+      </li>
+      <li class="oh-pagination__item oh-pagination__item--wide">
+        <a hx-target='#view-container' href="?page={{ operationlogs.previous_page_number }}" class="oh-pagination__link">{% trans "Previous" %}</a>
+      </li>
+      {% endif %}
+      {% if operationlogs.paginator.num_pages > 1 %}
+        <li>
+          <span class="oh-pagination__page">
+          {% trans " Page " %} {{ operationlogs.number }} {% trans "of" %} {{ operationlogs.paginator.num_pages }} {% trans " " %}
+          </span>
+        </li>
+      {% endif %}
+      {% if operationlogs.has_next %}
+      <li class="oh-pagination__item oh-pagination__item--wide">
+        <a hx-target='#view-container' href="?page={{ operationlogs.next_page_number }}" class="oh-pagination__link">{% trans "Next" %}</a>
+      </li>
+      <li class="oh-pagination__item oh-pagination__item--wide">
+        <a hx-target='#view-container' href="?page={{ operationlogs.paginator.num_pages }}" class="oh-pagination__link">{% trans "Last" %}</a>
+      </li>
+      {% endif %}
+
+    </ul>
+  </nav>
 </div>
 </main>
 
@@ -421,7 +718,72 @@
         return false; // Prevent the default form submission
       }
 
+      // $('.operationlog_checkbox').click(function() { 
+      //   var id = $(this).attr('id');
+      //   const isChecked = $(this).prop('checked');
+      //   const csrftoken = getCookie('csrftoken');
+
+      //   console.log('clicked ' + id);
+
+      //   // Constructing the URL dynamically with base URL using Django template tags
+      //   var url = window.location.origin + '/operations/operationlog-toggle-approved/' + id + '/'+ isChecked+'/';
+
+
+      //   fetch(url, {
+      //     method: 'POST',
+      //     headers: {
+      //       'X-Requested-With': 'XMLHttpRequest',  // Optional header for identifying AJAX request
+      //       'X-CSRFToken': csrftoken
+      //     },
+      //     body: {},
+      //   })
+      //   .then(response => {
+      //     if (!response.ok) {
+      //       throw new Error('Network response was not ok');
+      //     }
+      //     return response.json();  // Assuming server returns JSON response
+      //   })
+      //   .then(data => {
+      //     console.log('Success:', data);
+      //     // Handle success response as needed
+      //   })
+      //   .catch(error => {
+      //     console.error('Error:', error);
+      //     // Handle error scenario
+      //   });
+      // })
+
+      document.getElementById('generatePdfBtn').addEventListener('click', function() {
+            // AJAX request to Django view for PDF generation
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '{% url "generate-pdf" %}', true);
+            xhr.responseType = 'blob';  // Response type is blob (binary data)
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var blob = xhr.response;
+                    var url = URL.createObjectURL(blob);
+
+                    // Open PDF in a new tab
+                    var newTab = window.open(url, '_blank');
+                    if (newTab) {
+                        newTab.focus();
+                    } else {
+                        alert('Please allow popups for this site');
+                    }
+
+                    // Clean up
+                    URL.revokeObjectURL(url);
+                }
+            };
+
+            xhr.send();
+        });
+        
+
+
 </script>
+
 <script src="{% static '/base/filter.js' %}"></script>
 <script src="{% static 'src/asset_category/assetCategoryView.js' %}"></script>
 {% endblock %}

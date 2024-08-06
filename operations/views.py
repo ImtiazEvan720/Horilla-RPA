@@ -6,6 +6,7 @@ This module is used to """
 import json
 from datetime import date, datetime
 from urllib.parse import parse_qs
+from django.utils import timezone
 
 import pandas as pd
 from django.contrib import messages
@@ -16,6 +17,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils import formats
+from django.template.loader import get_template
+from weasyprint import HTML
+from django_celery_beat.models import PeriodicTask
 
 from operations.filters import(
     OperationFilter,
@@ -24,7 +28,7 @@ from operations.filters import(
 
 from operations.models import(
     Operation,
-    OperationLog
+    OperationLog,    
 )
 
 from operations.forms import(
@@ -40,6 +44,7 @@ from base.methods import (
     get_pagination,
     sortby,
 )
+from employee.models import Employee
 from base.models import Company
 from base.views import paginator_qry
 from employee.models import EmployeeWorkInformation
@@ -50,6 +55,8 @@ from horilla.decorators import (
     permission_required,
 )
 from notifications.signals import notify
+from django.db import DatabaseError
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 @login_required
@@ -107,7 +114,7 @@ def operation_update(request, operation_id):
 
 
 @login_required
-@permission_required(perm="operation.delete_operation")
+@permission_required(perm="operations.delete_operation")
 def operation_delete(request, operation_id):
     """Delete the asset with the given id.
     If the asset is currently in use, display an info message and
@@ -125,38 +132,22 @@ def operation_delete(request, operation_id):
     """
     try:
         operation = Operation.objects.get(id=operation_id)
+        task_name = f'log-operation-{operation_id}'
+        
+        deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
+        deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
+        if deleted_count_logs > 0 :
+            print(f"Successfully deleted {deleted_count_logs} operations with name '{task_name}'.")                        
+        else:
+            print(f"No task found with name '{task_name}'.")                        
+    except Exception as e:
+        # Handle any other unexpected exceptions
+        print(f"An unexpected error occurred: {e}")  
+        messages.error(request, _(f"An unexpected error occurred: {e}"))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
     except Operation.DoesNotExist:
         messages.error(request, _("Operation not found"))
         return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
-    # asset_cat_id = asset.asset_category_id.id
-    # status = asset.asset_status
-    # asset_list_filter = request.GET.get("asset_list")
-    # asset_allocation = AssetAssignment.objects.filter(asset_id=asset).first()
-    # if asset_list_filter:
-    #     # if the asset deleted is from the filtered list of asset
-    #     asset_under = "asset_filter"
-    #     assets = Asset.objects.all()
-    #     previous_data = request.GET.urlencode()
-    #     asset_filtered = AssetFilter(request.GET, queryset=assets)
-    #     asset_list = asset_filtered.qs
-    #     paginator = Paginator(asset_list, 20)
-    #     page_number = request.GET.get("page")
-    #     page_obj = paginator.get_page(page_number)
-    #     context = {
-    #         "assets": page_obj,
-    #         "pg": previous_data,
-    #         "asset_category_id": asset.asset_category_id.id,
-    #         "asset_under": asset_under,
-    #     }
-    #     if status == "In use":
-    #         messages.info(request, _("Asset is in use"))
-    #         return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
-
-    #     elif asset_allocation:
-    #         # if this asset is used in any allocation
-    #         messages.error(request, _("Asset is used in allocation!."))
-    #         return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
-
     try:
         operation.delete()
         messages.success(request, _("Operation deleted successfully"))
@@ -167,7 +158,7 @@ def operation_delete(request, operation_id):
 
 @login_required
 @hx_request_required
-@permission_required(perm="operation.add_operation")
+@permission_required(perm="operations.add_operation")
 def operation_creation(request):
     """
     Allow a user to create a new AssetCategory object using a form.
@@ -192,7 +183,7 @@ def operation_creation(request):
 
 @login_required
 @hx_request_required
-@permission_required(perm="operation.add_operationlog")
+@permission_required(perm="operations.add_operationlog")
 def operationlog_creation(request):
     """
     Allow a user to create a new AssetCategory object using a form.
@@ -215,8 +206,51 @@ def operationlog_creation(request):
     context = {"operationlog_form": operationlog_form}
     return render(request, "category/operationlog_creation.html", context)    
 
+@login_required
+def operationlog_update_approval(request,operationlog_id,approved_value):
+    """
+    Allow a user to create a new AssetCategory object using a form.
+    Args:
+        request: the HTTP request object
+    Returns:
+        A rendered HTML template displaying the AssetCategory creation form.
+    """
+
+    try:
+        # Retrieve the OperationLog instance
+        instance = OperationLog.objects.get(id=operationlog_id)
+
+        # Update the approved field based on approved_value
+        if approved_value == 'true':
+            instance.approved = True
+        elif approved_value == 'false':
+            instance.approved = False
+        else:
+            messages.error(request, _("Invalid Params"))
+            return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
+
+        # Save the instance
+        instance.save()
+
+        # Prepare success response
+        # response_data = {
+        #     'status': 'success',
+        #     'message': 'Operation log updated successfully'
+        # }
+        messages.error(request, _("Log status changed successfully"))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))        
+
+    except OperationLog.DoesNotExist:        
+        messages.error(request, _("Operation log not found"))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
+
+    except Exception as e:        
+        messages.error(request, _(str(e)))
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
+    
+
 @login_required 
-@permission_required(perm="operation.view_operation")
+@permission_required(perm="operations.view_operation")
 def operations_dashboard(request):
     """
     This method is used to render the dashboard of the asset module.
@@ -238,7 +272,7 @@ def operations_dashboard(request):
     return render(request, "operations/dashboard.html", context)
 
 @login_required 
-@permission_required(perm="operation.view_operation")
+@permission_required(perm="operations.view_operation")
 def operations_list(request):
     """
     This method is used to render the dashboard of the asset module.
@@ -260,14 +294,30 @@ def operations_list(request):
     return render(request, "operations/operations_list.html", context)
 
 @login_required 
-@permission_required(perm="operationlog.view_operation")
+@permission_required(perm="operations.view_operationlog")
 def operationlog_list(request):
     """
     This method is used to render the dashboard of the asset module.
     """
-    operationLogs = OperationLog.objects.all()
+
+    user = request.user  # Assuming 'request' is available in your view
+
+    if user.is_superuser:  # Example permission check
+        operationLogs = OperationLog.objects.all()
+    else:
+        # Assuming `Employee` model is related to Django's built-in `User` model
+        # current_employee = get_object_or_404(Employee, user=request.user)
+        
+        # Filter OperationLog objects where performed_by is the current request user's employee instance
+        operationLogs = OperationLog.objects.filter(performed_by=request.user.employee_get)
+
+    paginator = Paginator(operationLogs, 10)  # Show 10 items per page
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "operationlogs": operationLogs,
+        "operationlogs": page_obj,
         # "operationLogs":operationLogs,
     }
     return render(request, "operations/operationlog_list.html", context)
@@ -290,7 +340,7 @@ def operationlog_information(request, operationlog_id):
     return render(request, "operations/operationlog_information.html", context)
 
 @login_required
-@permission_required(perm="operation.delete_operation")
+@permission_required(perm="operations.delete_operationlog")
 def operationlog_delete(request, operationlog_id):
     """Delete the asset with the given id.
     If the asset is currently in use, display an info message and
@@ -352,172 +402,60 @@ def operationlog_update(request, operationlog_id):
     }
 
     return render(request, "operations/operationlog_update.html", context=context)
+    operation_instance = Operation.objects.get(id=operation_id)
+
+    if request.method == "POST":
+        operationlog_instance = OperationLog(operation_instance,request.user.employee_get,timezone.now(),"")
+        operationlog_instance.save()
+        messages.success(request, _("Log Created"))
+        return HttpResponse("<script>window.location.reload();</script>")
+    return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))
+
+@login_required
+def generate_pdf(request):
+    # Retrieve data or context needed for your PDF
+
+    user = request.user  # Assuming 'request' is available in your view
+
+    if user.is_superuser:  # Example permission check
+        operationLogs = OperationLog.objects.all()
+    else:                
+        # Filter OperationLog objects where performed_by is the current request user's employee instance
+        operationLogs = OperationLog.objects.filter(performed_by=request.user.employee_get)
+    
+    context = {
+        'operation_logs':operationLogs,
+        'title': 'Operation Logs',
+        'content': 'Operation Logs for Employee ' + request.user.employee_get.get_full_name(),
+        'current_time': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+
+    # Render HTML template
+    template = get_template('operations/pdf_template.html')
+    html_content = template.render(context)
+
+    # Generate PDF using WeasyPrint
+    pdf_file = HTML(string=html_content).write_pdf()
+
+    # Return PDF response
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = 'filename="sample.pdf"'
+    return response
 
 # @login_required
-# @permission_required(perm="asset.view_assetcategory")
-# def asset_available_chart(request):
-#     """
-#     This function returns the response for the available asset chart in the asset dashboard.
-#     """
-#     asset_available = Asset.objects.filter(asset_status="Available")
-#     asset_unavailable = Asset.objects.filter(asset_status="Not-Available")
-#     asset_in_use = Asset.objects.filter(asset_status="In use")
+# def clear_operation_logs(operation_id):
 
-#     labels = ["In use", "Available", "Not-Available"]
-#     dataset = [
-#         {
-#             "label": _("asset"),
-#             "data": [len(asset_in_use), len(asset_available), len(asset_unavailable)],
-#         },
-#     ]
-
-#     response = {
-#         "labels": labels,
-#         "dataset": dataset,
-#         "message": _("Oops!! No Asset found..."),
-#         "emptyImageSrc": "/static/images/ui/asset.png",
-#     }
-#     return JsonResponse(response)
-
-
-# @login_required
-# @permission_required(perm="operation.view_operation")
-# def asset_category_chart(request):
-#     """
-#     This function returns the response for the asset category chart in the asset dashboard.
-#     """
-#     asset_categories = AssetCategory.objects.all()
-#     data = []
-#     for asset_category in asset_categories:
-#         category_count = 0
-#         category_count = len(asset_category.asset_set.filter(asset_status="In use"))
-#         data.append(category_count)
-
-#     labels = [category.asset_category_name for category in asset_categories]
-#     dataset = [
-#         {
-#             "label": _("assets in use"),
-#             "data": data,
-#         },
-#     ]
-
-#     response = {
-#         "labels": labels,
-#         "dataset": dataset,
-#         "message": _("Oops!! No Asset found..."),
-#         "emptyImageSrc": "/static/images/ui/asset.png",
-#     }
-#     return JsonResponse(response)
-
-
-# @login_required
-# @permission_required(perm="asset.view_assetassignment")
-# def asset_history(request):
-#     """
-#     This function is responsible for loading the asset history view
-
-#     Args:
-
-
-#     Returns:
-#         returns asset history view template
-#     """
-#     previous_data = request.GET.urlencode() + "&returned_assets=True"
-#     asset_assignments = AssetHistoryFilter({"returned_assets": "True"}).qs.order_by(
-#         "-id"
-#     )
-#     data_dict = parse_qs(previous_data)
-#     get_key_instances(AssetAssignment, data_dict)
-#     asset_assignments = paginator_qry(asset_assignments, request.GET.get("page"))
-#     requests_ids = json.dumps(
-#         [instance.id for instance in asset_assignments.object_list]
-#     )
-#     context = {
-#         "asset_assignments": asset_assignments,
-#         "f": AssetHistoryFilter(),
-#         "filter_dict": data_dict,
-#         "gp_fields": AssetHistoryReGroup().fields,
-#         "pd": previous_data,
-#         "requests_ids": requests_ids,
-#     }
-#     return render(request, "asset_history/asset_history_view.html", context)
-
-
-# @login_required
-# @permission_required(perm="asset.view_assetassignment")
-# def asset_history_single_view(request, asset_id):
-#     """
-#     this method is used to view details of individual asset assignments
-
-#     Args:
-#         request (HTTPrequest): http request
-#         asset_id (int): ID of the asset assignment
-
-#     Returns:
-#         html: Returns asset history single view template
-#     """
-#     asset_assignment = get_object_or_404(AssetAssignment, id=asset_id)
-#     context = {"asset_assignment": asset_assignment}
-#     requests_ids_json = request.GET.get("requests_ids")
-#     if requests_ids_json:
-#         requests_ids = json.loads(requests_ids_json)
-#         previous_id, next_id = closest_numbers(requests_ids, asset_id)
-#         context["requests_ids"] = requests_ids_json
-#         context["previous"] = previous_id
-#         context["next"] = next_id
-#     return render(
-#         request,
-#         "asset_history/asset_history_single_view.html",
-#         context,
-#     )
-
-
-# @login_required
-# @permission_required(perm="asset.view_assetassignment")
-# def asset_history_search(request):
-#     """
-#     This method is used to filter the asset history view or to group by the datas.
-
-#     Args:
-#         request (HTTPrequest):http request
-
-#     Returns:
-#         returns asset history list or group by
-#     """
-#     previous_data = request.GET.urlencode()
-#     asset_assignments = AssetHistoryFilter(request.GET).qs.order_by("-id")
-#     asset_assignments = sortby(request, asset_assignments, "sortby")
-#     template = "asset_history/asset_history_list.html"
-#     field = request.GET.get("field")
-#     if field != "" and field is not None:
-#         asset_assignments = group_by_queryset(
-#             asset_assignments, field, request.GET.get("page"), "page"
-#         )
-#         template = "asset_history/group_by.html"
-#         list_values = [entry["list"] for entry in asset_assignments]
-#         id_list = []
-#         for value in list_values:
-#             for instance in value.object_list:
-#                 id_list.append(instance.id)
-
-#         requests_ids = json.dumps(list(id_list))
-#     else:
-#         asset_assignments = paginator_qry(asset_assignments, request.GET.get("page"))
-
-#         requests_ids = json.dumps(
-#             [instance.id for instance in asset_assignments.object_list]
-#         )
-#     data_dict = parse_qs(previous_data)
-#     get_key_instances(AssetAssignment, data_dict)
-
-#     return render(
-#         request,
-#         template,
-#         {
-#             "asset_assignments": asset_assignments,
-#             "filter_dict": data_dict,
-#             "field": field,
-#             "pd": previous_data,
-#             "requests_ids": requests_ids,
-#         },
-#     )
+#     task_name = f'log-operation-{operation_id}'
+#     try :
+#         deleted_count,records = PeriodicTask.objects.filter(name=task_name).delete()
+#         deleted_count_logs, log_records = OperationLog.objects.filter(operation=operation_id).delete()
+#         if deleted_count > 0 or deleted_count_logs > 0:
+#             print(f"Successfully deleted {deleted_count} task(s) with name '{task_name}'.")                        
+#         else:
+#             print(f"No task found with name '{task_name}'.")                    
+#     except DatabaseError as e:
+#         # Handle any database errors that occur
+#         print(f"An error occurred while deleting the periodic task: {e}")        
+#     except Exception as e:
+#         # Handle any other unexpected exceptions
+#         print(f"An unexpected error occurred: {e}")        
