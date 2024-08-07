@@ -170,9 +170,12 @@
                 $('#preferred-date-field').removeClass('hidden');
                 $('#day_of_month_field').addClass('hidden');
                 $('#day_of_week_field').addClass('hidden');
-                var date = new Date();
-                date.setDate(date.getDate() + 1);
-                $('#datepicker')[0].value = date.toISOString().split('T')[0];                
+                if($('#datepicker')[0].value == '')
+                {
+                  var date = new Date();
+                  date.setDate(date.getDate() + 1);
+                  $('#datepicker')[0].value = date.toISOString().split('T')[0];                
+                }                
             break;
             default:
                 $('#preferred-time-field').addClass('hidden');    
